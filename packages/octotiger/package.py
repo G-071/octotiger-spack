@@ -93,6 +93,8 @@ class Octotiger(CMakePackage):
         args.append(self.define('OCTOTIGER_WITH_VC', 'ON'))
         args.append(self.define('OCTOTIGER_WITH_LEGACY_VC', 'OFF'))
 
+        args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
+
         # griddim
         args.append(
             '-DOCTOTIGER_WITH_GRIDDIM={0}'.format(spec.variants['griddim'].value))
