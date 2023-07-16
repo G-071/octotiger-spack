@@ -67,7 +67,7 @@ class Octotiger(CMakePackage):
     depends_on('cuda', when='+cuda')
 
     hpx_string = 'hpx@1.8.0: cxxstd=17'
-    depends_on(hpx_string + ' +cuda', when='+cuda') #networking=mpi ?
+    depends_on(hpx_string + ' +cuda +async_cuda', when='+cuda') #networking=mpi ?
     depends_on(hpx_string + ' -cuda', when='-cuda')
 
     kokkos_string = 'kokkos +serial +hpx +hpx_async_dispatch +aggressive_vectorization '
@@ -83,17 +83,32 @@ class Octotiger(CMakePackage):
         spec = self.spec
         args = []
 
+        args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDSA', 'ON'))
+        
         # CUDA
         args.append(self.define_from_variant('OCTOTIGER_WITH_CUDA', 'cuda'))
         args.append(self.define_from_variant('OCTOTIGER_WITH_KOKKOS', 'kokkos'))
 
+        args.append(self.define('OCTOTIGER_KOKKOS_SIMD_LIBRARY', 'KOKKOS'))
+        args.append(self.define('OCTOTIGER_KOKKOS_SIMD_EXTENSION', 'SCALAR'))
+        args.append(self.define('OCTOTIGER_WITH_MONOPOLE_HOST_HPX_EXECUTOR', 'OFF'))
+        args.append(self.define('OCTOTIGER_WITH_MULTIPOLE_HOST_HPX_EXECUTOR', 'OFF'))
+        args.append(self.define('OCTOTIGER_WITH_HYDRO_HOST_HPX_EXECUTOR', 'OFF'))
+        args.append(self.define('OCTOTIGER_WITH_KOKKOS_MULTIPOLE_TASKS', '1'))
+        args.append(self.define('OCTOTIGER_WITH_KOKKOS_MONOPOLE_TASKS', '1'))
+        args.append(self.define('OCTOTIGER_WITH_KOKKOS_HYDRO_TASKS', '1'))
+
         # test
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
-        args.append(self.define('OCTOTIGER_KOKKOS_SIMD_EXTENSION', 'SCALAR'))
         args.append(self.define('OCTOTIGER_WITH_VC', 'ON'))
         args.append(self.define('OCTOTIGER_WITH_LEGACY_VC', 'OFF'))
 
-        args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
+        if spec.satisfies("%clang"): 
+            args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
+        else:
+            args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))
+        args.append(self.define('OCTOTIGER_WITH_UNBUFFERED_STDOUT', 'OFF'))
+        args.append(self.define('OCTOTIGER_WITH_MAX_NUMBER_FIELDS', '15'))
 
         # griddim
         args.append(
