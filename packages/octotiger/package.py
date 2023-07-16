@@ -50,10 +50,10 @@ class Octotiger(CMakePackage):
     depends_on('cppuddle +hpx_support')
 
     depends_on('hpx-kokkos@master +cuda',
-               when='+kokkos +cuda',
+               when='+kokkos +cuda', patches=['version.patch']
                )
-    depends_on('hpx-kokkos@master -cuda',
-               when='+kokkos -cuda',
+    depends_on('hpx-kokkos@master -cuda', 
+               when='+kokkos -cuda', patches=['version.patch']
                )
 
     depends_on('cmake@3.16.0:', type='build')
@@ -71,13 +71,14 @@ class Octotiger(CMakePackage):
     depends_on(hpx_string + ' -cuda', when='-cuda')
 
     kokkos_string = 'kokkos +serial +hpx +hpx_async_dispatch +aggressive_vectorization '
+    #depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper ', when='+kokkos +cuda', patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch'])
+    #depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',when='+kokkos -cuda', patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch'] )
     depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper ', when='+kokkos +cuda')
     depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',when='+kokkos -cuda')
 
     #depends_on('kokkos-nvcc-wrapper', when='+kokkos')
     depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos',
-              patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch',]
-            )
+              patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch'])
     def cmake_args(self):
         spec = self.spec
         args = []
