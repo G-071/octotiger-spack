@@ -6,7 +6,6 @@ git clone --depth=100 --branch=releases/v0.20 https://github.com/spack/spack.git
 cd /path/to/spack
 . share/spack/setup-env.sh
 # spack repo install
-git clone https://github.com/spack/spacksgit
 git clone https://github.com/G-071/octotiger-spack.git /path/to/octotiger-spack
 spack repo add /path/to/octotiger-spack
 # use system packages
