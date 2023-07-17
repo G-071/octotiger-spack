@@ -9,6 +9,7 @@ cd /path/to/spack
 git clone https://github.com/G-071/octotiger-spack.git /path/to/octotiger-spack
 spack repo add /path/to/octotiger-spack
 # use system packages
+spack compiler find # search currently loaded compilers
 spack external find cuda # replace cuda by desired packages or leave blank to get everything
 # Check package availability and its variants:
 spack info octotiger
