@@ -3,8 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from spack.package import depends_on, conflicts, variant, version, CMakePackage, CudaPackage, ROCmPackage, SpackError
-from spack.package import maintainers
+from spack.package import *
 
 
 class Octotiger(CMakePackage, CudaPackage, ROCmPackage):

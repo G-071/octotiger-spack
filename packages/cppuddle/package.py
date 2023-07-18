@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from spack.package import depends_on, variant, version, CMakePackage, maintainers, working_dir, ctest
+from spack.package import *
 
 
 class Cppuddle(CMakePackage):
