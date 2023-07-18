@@ -22,6 +22,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     variant('cuda', default=True,
             description='Build octotiger with CUDA (also allows Kokkos kernels to run with CUDA)')
+    variant('rocm', default=False,
+            description='Build octotiger with ROCm/HIP (also allows Kokkos kernels to run with HIP)')
     variant('kokkos', default=True,
             description='Build octotiger with kokkos based kernels')
     variant('griddim', default='8', description='Octotiger grid size',
@@ -74,17 +76,21 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             sm_), when='+kokkos +cuda cuda_arch={0} %gcc'.format(sm_))
         depends_on(kokkos_string + ' +cuda +cuda_lambda -wrapper cuda_arch={0}'.format(
             sm_), when='+kokkos +cuda cuda_arch={0} %clang'.format(sm_))
-    depends_on("kokkos@4.1.00: +hpx +hpx_async_dispatch ",
-               when="+kokkos_hpx_kernels")
+    for gfx in ROCmPackage.amdgpu_targets:
+        depends_on(kokkos_string + ' +rocm amdgpu_target={0}'.format(gfx),
+                   when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
     depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',
                when='+kokkos -cuda')
-    depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos',
+    depends_on("kokkos@4.1.00: +hpx +hpx_async_dispatch ",
+               when="+kokkos_hpx_kernels")
+    depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
                patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch'])
 
     conflicts("+cuda", when="cuda_arch=none")
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
+    conflicts("+cuda", when="+rocm", msg="CUDA and ROCm are not compatible in Octo-Tiger.")
 
     # depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper ', when='+kokkos
     # +cuda', patches=['adapt-kokkos-wrapper-for-nix.patch',
@@ -92,27 +98,24 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',when='+kokkos
     # -cuda', patches=['adapt-kokkos-wrapper-for-nix.patch',
     # 'adapt-kokkos-wrapper-for-hpx.patch'] )
-    # for gfx in ROCmPackage.amdgpu_targets:
-    #    depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper
-    #    amdgpu_target={0}'.format(gfx), when='+kokkos +cuda
-    #    amdgpu_target={0}'.format(gfx))
 
     def cmake_args(self):
         spec = self.spec
         args = []
 
-        args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDSA', 'ON'))
-
         # CUDA
         args.append(self.define_from_variant('OCTOTIGER_WITH_CUDA', 'cuda'))
-        args.append(self.define_from_variant(
-            'OCTOTIGER_WITH_KOKKOS', 'kokkos'))
+        args.append(self.define_from_variant('OCTOTIGER_WITH_KOKKOS', 'kokkos'))
         if '+cuda' in spec:
             cuda_arch_list = spec.variants['cuda_arch'].value
             cuda_arch = cuda_arch_list[0]
             if cuda_arch != 'none':
                 args.append('-DOCTOTIGER_CUDA_ARCH=sm_{0}'.format(cuda_arch))
 
+        # HIP
+        args.append(self.define_from_variant('OCTOTIGER_WITH_HIP', 'rocm'))
+
+        # SIMD
         args.append(self.define_from_variant(
             'OCTOTIGER_KOKKOS_SIMD_LIBRARY', 'simd_library'))
         args.append(self.define_from_variant(
@@ -129,36 +132,30 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             'OCTOTIGER_WITH_KOKKOS_MONOPOLE_TASKS', 'monopole_host_tasks'))
         args.append(self.define_from_variant(
             'OCTOTIGER_WITH_KOKKOS_HYDRO_TASKS', 'hydro_host_tasks'))
-
         if "~kokkos_hpx_kernels" in spec or "-kokkos_hpx_kernels" in spec:
             if spec.variants["multipole_host_tasks"].value > 1:
-                raise SpackError(
-                    "multipole_host_tasks > 1 requires +kokkos_hpx_kernels")
+                raise SpackError("multipole_host_tasks > 1 requires +kokkos_hpx_kernels")
             if spec.variants["monopole_host_tasks"].value > 1:
-                raise SpackError(
-                    "monopole_host_tasks > 1 requires +kokkos_hpx_kernels")
+                raise SpackError("monopole_host_tasks > 1 requires +kokkos_hpx_kernels")
             if spec.variants["hydro_host_tasks"].value > 1:
-                raise SpackError(
-                    "hydro_host_tasks > 1 requires +kokkos_hpx_kernels")
-
-        # test
-        args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
+                raise SpackError("hydro_host_tasks > 1 requires +kokkos_hpx_kernels")
         args.append(self.define('OCTOTIGER_WITH_VC', 'ON'))
         args.append(self.define('OCTOTIGER_WITH_LEGACY_VC', 'OFF'))
 
+        # Tests
+        args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
         if spec.satisfies("%clang"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))
-        args.append(self.define('OCTOTIGER_WITH_UNBUFFERED_STDOUT', 'OFF'))
+
+        # Compute config
+        args.append('-DOCTOTIGER_WITH_GRIDDIM={0}'.format(spec.variants['griddim'].value))
+        args.append('-DOCTOTIGER_THETA_MINIMUM={0}'.format(spec.variants['theta_minimum'].value))
         args.append(self.define('OCTOTIGER_WITH_MAX_NUMBER_FIELDS', '15'))
 
-        # griddim
-        args.append(
-            '-DOCTOTIGER_WITH_GRIDDIM={0}'.format(spec.variants['griddim'].value))
-
-        # theta_minimum
-        args.append(
-            '-DOCTOTIGER_THETA_MINIMUM={0}'.format(spec.variants['theta_minimum'].value))
+        # Misc
+        args.append(self.define('OCTOTIGER_WITH_UNBUFFERED_STDOUT', 'OFF'))
+        args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDS', 'ON'))
 
         return args
