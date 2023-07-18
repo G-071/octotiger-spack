@@ -32,7 +32,7 @@ Octo-Tiger dev build:
 git clone https://github.com/STEllAR-GROUP/octotiger
 cd octotiger
 # Setup development shell with all dependencies (drops user into the build process right after cmake)
-spack dev-build --fresh --drop-in bash --until cmake --test=root -d ../octotiger octotiger+cuda+kokkos@master%gcc@11^cuda@11.8.89^cmake@3.26.4^kokkos@3.6.01 cuda_arch=75
+spack dev-build --fresh --drop-in bash --until cmake --test=root octotiger+cuda+kokkos cuda_arch=75 @master%gcc@11^cuda@11.8.89
 cd spack_build_id #exact dir name ist printed by the last command
 # Use with usual edit-make-test cycle after editing the src directory...
 make -j16
