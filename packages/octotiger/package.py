@@ -50,6 +50,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('cppuddle +hpx_support')
 
+    depends_on('hpx-kokkos@master +rocm',
+               when='+kokkos +rocm', patches=['version.patch'])
     depends_on('hpx-kokkos@master +cuda',
                when='+kokkos +cuda', patches=['version.patch'])
     depends_on('hpx-kokkos@master -cuda',
@@ -66,9 +68,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('cuda', when='+cuda')
 
     hpx_string = 'hpx@1.8.0: cxxstd=17'
-    depends_on(hpx_string + ' +cuda +async_cuda ',
-               when='+cuda')  # networking=mpi ?
-    depends_on(hpx_string + ' -cuda', when='-cuda')
+    depends_on(hpx_string + ' +cuda +async_cuda ', when='+cuda') 
+    depends_on(hpx_string + ' +rocm ', when='+rocm') 
+    depends_on(hpx_string + ' -cuda -rocm', when='-cuda -rocm')
+    # networking=mpi ?
 
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
     for sm_ in CudaPackage.cuda_arch_values:
@@ -103,7 +106,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         args = []
 
-        # CUDA
+        # CUDA & Kokkos config
         args.append(self.define_from_variant('OCTOTIGER_WITH_CUDA', 'cuda'))
         args.append(self.define_from_variant('OCTOTIGER_WITH_KOKKOS', 'kokkos'))
         if '+cuda' in spec:
@@ -112,10 +115,12 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             if cuda_arch != 'none':
                 args.append('-DOCTOTIGER_CUDA_ARCH=sm_{0}'.format(cuda_arch))
 
-        # HIP
+        # HIP config
         args.append(self.define_from_variant('OCTOTIGER_WITH_HIP', 'rocm'))
+        if "+rocm" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
 
-        # SIMD
+        # SIMD & CPU kernel config
         args.append(self.define_from_variant(
             'OCTOTIGER_KOKKOS_SIMD_LIBRARY', 'simd_library'))
         args.append(self.define_from_variant(
@@ -133,18 +138,18 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append(self.define_from_variant(
             'OCTOTIGER_WITH_KOKKOS_HYDRO_TASKS', 'hydro_host_tasks'))
         if "~kokkos_hpx_kernels" in spec or "-kokkos_hpx_kernels" in spec:
-            if spec.variants["multipole_host_tasks"].value > 1:
+            if int(spec.variants["multipole_host_tasks"].value) > 1:
                 raise SpackError("multipole_host_tasks > 1 requires +kokkos_hpx_kernels")
-            if spec.variants["monopole_host_tasks"].value > 1:
+            if int(spec.variants["monopole_host_tasks"].value) > 1:
                 raise SpackError("monopole_host_tasks > 1 requires +kokkos_hpx_kernels")
-            if spec.variants["hydro_host_tasks"].value > 1:
+            if int(spec.variants["hydro_host_tasks"].value) > 1:
                 raise SpackError("hydro_host_tasks > 1 requires +kokkos_hpx_kernels")
         args.append(self.define('OCTOTIGER_WITH_VC', 'ON'))
         args.append(self.define('OCTOTIGER_WITH_LEGACY_VC', 'OFF'))
 
         # Tests
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
-        if spec.satisfies("%clang"):
+        if spec.satisfies("%clang") or spec.satisfies("+rocm"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))

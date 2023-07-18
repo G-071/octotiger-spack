@@ -48,6 +48,8 @@ class Cppuddle(CMakePackage):
                 self.define_from_variant("CPPUDDLE_DEACTIVATE_BUFFER_RECYCLING", "disable_recycling"),
                 self.define_from_variant("CPPUDDLE_DEACTIVATE_AGGRESSIVE_ALLOCATORS", "disable_aggressive_allocators"),
                 ]
+        if spec.satisfies("^hpx +rocm"):
+            args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
         return args
 
     def check(self):
