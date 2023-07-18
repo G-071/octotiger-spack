@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from spack.package import *
+from spack.package import depends_on, variant, version, CMakePackage, maintainers, working_dir, ctest
 
 
 class Cppuddle(CMakePackage):
@@ -20,19 +20,20 @@ class Cppuddle(CMakePackage):
 
     variant("counters", default=False, description="Activate allocation counters")
     variant("hpx_support", default=False, description="Build with HPX support")
-    #variant("mutex_type", default="std", values=("std", "hpx"), description="Internal mutex type")
-    variant("max_worker_count", default=128, values=lambda x: isinstance(x, str) and x.isdigit(),  description="Maximum number of supported workers")
-    variant("gpu_count", default=1, values=lambda x: isinstance(x, str) and x.isdigit(), description="Number of GPUs to be used")
+    # variant("mutex_type", default="std", values=("std", "hpx"), description="Internal mutex type")
+    variant("max_worker_count", default=128, values=lambda x: isinstance(x, str)
+            and x.isdigit(),  description="Maximum number of supported workers")
+    variant("gpu_count", default=1, values=lambda x: isinstance(x, str)
+            and x.isdigit(), description="Number of GPUs to be used")
     variant("disable_recycling", default=False, description="Disable buffer recycling altogether")
-    variant("disable_aggressive_allocators", default=False, description="Disable aggressive content reusage")
-
+    variant("disable_aggressive_allocators", default=False,
+            description="Disable aggressive content reusage")
 
     depends_on("cmake@3.16:")
     depends_on("hpx", when="+hpx_support")
     depends_on("boost +program_options", type=("test"))
 
     build_directory = "spack-build"
-
 
     def cmake_args(self):
         spec, args = self.spec, []
@@ -53,5 +54,3 @@ class Cppuddle(CMakePackage):
         if self.run_tests:
             with working_dir(self.build_directory):
                 ctest("--output-on-failure -j4 ")
-
-
