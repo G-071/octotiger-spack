@@ -50,8 +50,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('cppuddle +hpx_support')
 
-    depends_on('hpx-kokkos@master +rocm',
-               when='+kokkos +rocm', patches=['version.patch'])
     depends_on('hpx-kokkos@master +cuda',
                when='+kokkos +cuda', patches=['version.patch'])
     depends_on('hpx-kokkos@master -cuda',
@@ -69,19 +67,27 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     hpx_string = 'hpx@1.8.0: cxxstd=17'
     depends_on(hpx_string + ' +cuda +async_cuda ', when='+cuda') 
-    depends_on(hpx_string + ' +rocm ', patches=['hpx_rocblas.patch'], when='+rocm') 
     depends_on(hpx_string + ' -cuda -rocm', when='-cuda -rocm')
     # networking=mpi ?
 
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
+    # This loop propgates the chosem cuda_arch to kokkos.
+    # TODO find better way to ensure all dependencies use the same cuda_arch
     for sm_ in CudaPackage.cuda_arch_values:
         depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper cuda_arch={0}'.format(
             sm_), when='+kokkos +cuda cuda_arch={0} %gcc'.format(sm_))
         depends_on(kokkos_string + ' +cuda +cuda_lambda -wrapper cuda_arch={0}'.format(
             sm_), when='+kokkos +cuda cuda_arch={0} %clang'.format(sm_))
+    # This loop propgates the chosem amdgpu_target to hpx, kokkos and hpx-kokkos.
+    # Without it we would need to manually add the same amdgpu_target via ^ to them manually.
+    # TODO find better way to ensure all dependencies use the same amdgpu_target
     for gfx in ROCmPackage.amdgpu_targets:
         depends_on(kokkos_string + ' +rocm amdgpu_target={0}'.format(gfx),
                    when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
+        depends_on(hpx_string + ' +rocm amdgpu_target={0}'.format(gfx), patches=['hpx_rocblas.patch'],
+                   when='+rocm amdgpu_target={0}'.format(gfx)) 
+        depends_on('hpx-kokkos@master +rocm amdgpu_target={0}'.format(gfx),
+                   when='+kokkos +rocm amdgpu_target={0}'.format(gfx), patches=['version.patch'])
     depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',
                when='+kokkos -cuda')
     depends_on("kokkos@4.1.00: +hpx +hpx_async_dispatch ",

@@ -26,8 +26,10 @@ spack load octotiger~cuda~kokkos
 octotiger --help
 ```
 
-Octo-Tiger cuda dev build (rtx 2060):
+Octo-Tiger CUDA/Kokkos dev build (rtx 2060):
 ```sh
+module load cuda/11.8
+spack external find cuda # finds cuda@11.8.89 in this example...
 # Get fresh src dir
 git clone https://github.com/STEllAR-GROUP/octotiger
 cd octotiger
@@ -36,18 +38,23 @@ spack dev-build --fresh --drop-in bash --until cmake --test=root octotiger+cuda+
 cd spack_build_id #exact dir name ist printed by the last command
 # Use with usual edit-make-test cycle after editing the src directory...
 make -j16
-ctest
+ctest --output-on-failure
 ./octotiger --help
 ```
 
-Octo-Tiger hip dev build (MI100):
+Octo-Tiger HIP/Kokkos dev build (MI100):
 ```sh
 module load rocm/5.4.6
 spack compiler find # should find rocmcc@5.4.6
 spack external find hip llvm-amdgpu hsa-rocr-dev # other erquired 5.4.6 packges from the rocm module
+git clone https://github.com/STEllAR-GROUP/octotiger
+cd octotiger
+# long, manual spec for dev build:
 spack dev-build --drop-in bash --until cmake --test=root octotiger+rocm+kokkos amdgpu_target=gfx908@master%rocmcc@5.4.6 ^asio@1.16.0^hpx max_cpu_count=128 amdgpu_target=gfx908 ^hip@5.4.6 ^llvm-amdgpu@5.4.6^kokkos amdg
 pu_target=gfx908 ^hpx-kokkos amdgpu_target=gfx908
+# new alternative (octotiger package now internally propgates the amdgpu_target to hpx, kokkos and hpx-kokkos, enabling this shorter version):
+spack dev-build --drop-in bash --until cmake --test=root octotiger+rocm+kokkos amdgpu_target=gfx908@master%rocmcc@5.4.6 ^asio@1.16.0^hpx max_cpu_count=128 ^hip@5.4.6 ^llvm-amdgpu@5.4.6
 cd spack_build_id #exact dir name ist printed by the last command
 # Use with usual edit-make-test cycle after editing the src directory...
-make -j16
-ctest
+make -j32
+ctest --output-on-failure
