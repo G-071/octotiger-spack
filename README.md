@@ -15,7 +15,7 @@ spack external find cuda # replace cuda by desired packages or leave blank to ge
 spack info octotiger
 ```
 
-Basic Octo-Tiger installtion:
+Basic Octo-Tiger installation:
 ```sh
 # Basic octotiger installation
 spack install --fresh --test=root octotiger~cuda~kokkos
@@ -26,7 +26,7 @@ spack load octotiger~cuda~kokkos
 octotiger --help
 ```
 
-Octo-Tiger CUDA/Kokkos dev build (rtx 2060):
+Octo-Tiger CUDA/Kokkos dev build (RTX 2060):
 ```sh
 module load cuda/11.8
 spack external find cuda # finds cuda@11.8.89 in this example...
