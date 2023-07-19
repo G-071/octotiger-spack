@@ -69,7 +69,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     hpx_string = 'hpx@1.8.0: cxxstd=17'
     depends_on(hpx_string + ' +cuda +async_cuda ', when='+cuda') 
-    depends_on(hpx_string + ' +rocm ', when='+rocm') 
+    depends_on(hpx_string + ' +rocm ', patches=['hpx_rocblas.patch'], when='+rocm') 
     depends_on(hpx_string + ' -cuda -rocm', when='-cuda -rocm')
     # networking=mpi ?
 
@@ -94,6 +94,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
     conflicts("+cuda", when="+rocm", msg="CUDA and ROCm are not compatible in Octo-Tiger.")
+    # Without Kokkos the rocm arch flags are all wrong
+    conflicts("+rocm", when="-kokkos", msg="ROCm support requires building with Kokkos.")
 
     # depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper ', when='+kokkos
     # +cuda', patches=['adapt-kokkos-wrapper-for-nix.patch',

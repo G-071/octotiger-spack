@@ -26,7 +26,7 @@ spack load octotiger~cuda~kokkos
 octotiger --help
 ```
 
-Octo-Tiger dev build:
+Octo-Tiger cuda dev build (rtx 2060):
 ```sh
 # Get fresh src dir
 git clone https://github.com/STEllAR-GROUP/octotiger
@@ -40,3 +40,14 @@ ctest
 ./octotiger --help
 ```
 
+Octo-Tiger hip dev build (MI100):
+```sh
+module load rocm/5.4.6
+spack compiler find # should find rocmcc@5.4.6
+spack external find hip llvm-amdgpu hsa-rocr-dev # other erquired 5.4.6 packges from the rocm module
+spack dev-build --drop-in bash --until cmake --test=root octotiger+rocm+kokkos amdgpu_target=gfx908@master%rocmcc@5.4.6 ^asio@1.16.0^hpx max_cpu_count=128 amdgpu_target=gfx908 ^hip@5.4.6 ^llvm-amdgpu@5.4.6^kokkos amdg
+pu_target=gfx908 ^hpx-kokkos amdgpu_target=gfx908
+cd spack_build_id #exact dir name ist printed by the last command
+# Use with usual edit-make-test cycle after editing the src directory...
+make -j16
+ctest

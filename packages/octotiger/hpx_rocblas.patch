@@ -1,0 +1,34 @@
+diff --git a/cmake/HPX_SetupHIP.cmake b/cmake/HPX_SetupHIP.cmake
+index e19b78c7e2..edaadb115d 100644
+--- a/cmake/HPX_SetupHIP.cmake
++++ b/cmake/HPX_SetupHIP.cmake
+@@ -19,17 +19,18 @@ if(HPX_WITH_HIP AND NOT TARGET roc::hipblas)
+   list(APPEND CMAKE_PREFIX_PATH $ENV{DEVICE_LIB_PATH}/cmake/amd_comgr)
+   list(APPEND CMAKE_PREFIX_PATH $ENV{DEVICE_LIB_PATH}/cmake/hsa-runtime64)
+   # Setup hipblas (creates roc::hipblas)
+-  find_package(hipblas HINTS $ENV{HIPBLAS_ROOT} CONFIG)
+-  if(NOT hipblas_FOUND)
+-    hpx_warn(
+-      "Hipblas could not be found, the blas parts will therefore be disabled.\n\
+-      You can reconfigure specifying HIPBLAS_ROOT to enable hipblas"
+-    )
+-    set(HPX_WITH_GPUBLAS OFF)
+-  else()
+-    set(HPX_WITH_GPUBLAS ON)
+-    hpx_add_config_define(HPX_HAVE_GPUBLAS)
+-  endif()
++  set(HPX_WITH_GPUBLAS OFF)
++  #find_package(hipblas HINTS $ENV{HIPBLAS_ROOT} CONFIG)
++  #if(NOT hipblas_FOUND)
++  #  hpx_warn(
++  #    "Hipblas could not be found, the blas parts will therefore be disabled.\n\
++  #    You can reconfigure specifying HIPBLAS_ROOT to enable hipblas"
++  #  )
++  #  set(HPX_WITH_GPUBLAS OFF)
++  #else()
++  #  set(HPX_WITH_GPUBLAS ON)
++  #  hpx_add_config_define(HPX_HAVE_GPUBLAS)
++  #endif()
+ 
+   if(NOT HPX_FIND_PACKAGE)
+     # The cmake variables are supposed to be cached no need to redefine them
