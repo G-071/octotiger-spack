@@ -26,6 +26,13 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
         values=cxxstds,
         description="Use the specified C++ standard when building.",
     )
+    variant("sycl", default=False, description="Build with SYCL support")
+    variant("cuda_future_type", default="event",
+            description="Integration type for CUDA/HIP futures",
+            values=("event", "callback"), multi=False)
+    variant("sycl_future_type", default="event",
+            description="Integration type for SYCL futures",
+            values=("event", "host_task"), multi=False)
 
     depends_on("cmake@3.19:", type="build")
 
@@ -45,11 +52,27 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("hpx cxxstd={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
         depends_on("kokkos std={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
 
-    # HPXKokkos explicitly supports CUDA and ROCm. Other GPU backends can be
+    # HPXKokkos explicitly supports CUDA, ROCm and SYCL. Other GPU backends can be
     # used but without support in HPXKokkos. Other CPU backends, except Serial,
     # can't be used together with the HPX backend.
     depends_on("hpx +cuda", when="+cuda")
     depends_on("kokkos +cuda +cuda_lambda +cuda_constexpr", when="+cuda")
 
+    depends_on("hpx@1.9.0: +sycl", when="+sycl")
+    depends_on("kokkos@3.7.0: +sycl", when="+sycl")
+
     depends_on("hpx +rocm", when="+rocm")
     depends_on("kokkos +rocm", when="+rocm")
+
+    conflicts("+sycl", when="@:0.3.0")
+    
+def cmake_args(self):
+    args = []
+
+    args.append(self.define_from_variant('HPX_KOKKOS_CUDA_FUTURE_TYPE', 'cuda_future_type'))
+    args.append(self.define_from_variant('HPX_KOKKOS_SYCL_FUTURE_TYPE', 'sycl_future_type'))
+
+    args.append(self.define('HPX_KOKKOS_ENABLE_TESTS', self.run_tests))
+    args.append(self.define('HPX_KOKKOS_ENABLE_BENCHMARKS', self.run_tests))
+
+    return args
