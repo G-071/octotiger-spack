@@ -1,0 +1,16 @@
+diff --git a/libs/core/config/include/hpx/config/compiler_specific.hpp b/libs/core/config/include/hpx/config/compiler_specific.hpp
+index 49be3a2040..d50189cf24 100644
+--- a/libs/core/config/include/hpx/config/compiler_specific.hpp
++++ b/libs/core/config/include/hpx/config/compiler_specific.hpp
+@@ -160,6 +160,11 @@
+ #endif
+ #define HPX_HOST_DEVICE HPX_HOST HPX_DEVICE
+ 
++// Define this AFTER HPX_[DEVICE|HOST] for SYCL
++// as we do not want the __device__ modifiers
++#if defined(HPX_HAVE_SYCL)
++#  define HPX_COMPUTE_CODE
++#endif
+ 
+ #if !defined(HPX_CDECL)
+ #define HPX_CDECL

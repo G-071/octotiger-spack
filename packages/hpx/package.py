@@ -71,7 +71,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     variant(
         "networking",
-        values=any_combination_of("tcp", "mpi").with_default("tcp"),
+        values=any_combination_of("tcp", "mpi", "lci").with_default("tcp"),
         description="Support for networking through parcelports",
     )
 
@@ -83,6 +83,13 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
         default=default_generic_coroutines,
         description="Use Boost.Context as the underlying coroutines"
         " context switch implementation.",
+    )
+
+    variant("sycl", default=False, description="Enable SYCL integration.")
+    variant(
+        "sycl_target_platform",
+        values=any_combination_of("intel", "nvidia", "amd", "nvidia_with_hip").with_default("intel"),
+        description="GPU target plaform for SYCL compilation.",
     )
 
     variant("tools", default=False, description="Build HPX tools")
@@ -123,8 +130,19 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("papi", when="instrumentation=papi")
     depends_on("valgrind", when="instrumentation=valgrind")
 
+    depends_on("dpcpp@2023-03:", when="+sycl sycl_target_platform=intel")
+    depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_platform=nvidia")
+    depends_on("dpcpp@2023-03: +hip hip-platform=AMD", when="+sycl sycl_target_platform=amd")
+    depends_on("dpcpp@2023-03: +hip hip-platform=NVIDIA", when="+sycl sycl_target_platform=nvidia_with_hip")
+
+    conflicts("networking=lci", when="@:1.8.1")
     # Only ROCm or CUDA maybe be enabled at once
     conflicts("+rocm", when="+cuda")
+    # SYCL CUDA/HIP backends require target arch informations:
+    conflicts("+sycl", when="@:1.8.1", msg="HPX SYCL support requires at least hpx version 1.9.0")
+    conflicts("sycl_target_platform=nvidia", when="cuda_arch=none")
+    conflicts("sycl_target_platform=nvidia_with_hip", when="cuda_arch=none")
+    conflicts("sycl_target_platform=amd", when="amdgpu_target=none")
 
     # Restrictions for 1.9.X
     with when("@1.9:"):
@@ -193,6 +211,8 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     # Patches APEX
     patch("git_external.patch", when="@1.3.0 instrumentation=apex")
     patch("mimalloc_no_version_requirement.patch", when="@:1.8.0 malloc=mimalloc")
+    
+    patch("sycl_define_hpx_compute.patch", when="+sycl")
 
     def url_for_version(self, version):
         if version >= Version("1.9.0"):
@@ -214,6 +234,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define_from_variant("HPX_WITH_MALLOC", "malloc"),
             self.define_from_variant("HPX_WITH_CUDA", "cuda"),
             self.define_from_variant("HPX_WITH_HIP", "rocm"),
+            self.define_from_variant("HPX_WITH_SYCL", "sycl"),
             self.define_from_variant("HPX_WITH_TOOLS", "tools"),
             self.define_from_variant("HPX_WITH_EXAMPLES", "examples"),
             self.define_from_variant("HPX_WITH_ASYNC_MPI", "async_mpi"),
@@ -223,6 +244,8 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define("HPX_WITH_NETWORKING", "networking=none" not in spec),
             self.define("HPX_WITH_PARCELPORT_TCP", "networking=tcp" in spec),
             self.define("HPX_WITH_PARCELPORT_MPI", "networking=mpi" in spec),
+            self.define("HPX_WITH_PARCELPORT_LCI", "networking=lci" in spec),
+            self.define("HPX_WITH_FETCH_LCI", "networking=lci" in spec),
             self.define_from_variant("HPX_WITH_MAX_CPU_COUNT", "max_cpu_count"),
             self.define_from_variant("HPX_WITH_GENERIC_CONTEXT_COROUTINES", "generic_coroutines"),
             self.define("BOOST_ROOT", spec["boost"].prefix),
@@ -241,6 +264,22 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
             if self.spec.satisfies("^cmake@3.21.0:3.21.2"):
                 args += [self.define("__skip_rocmclang", True)]
+                
+        # SYCL support requires compiling with dpcpp clang
+        if "+sycl ^dpcpp" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+            # Populate dpcpp target flags! See
+            # https://github.com/intel/llvm/blob/sycl/sycl/doc/GetStartedGuide.md
+            sycl_target_platform=""
+            if ("sycl_target_platform=nvidia" in self.spec) or ("sycl_target_platform=nvidia_with_hip" in self.spec):
+                cuda_arch_list = spec.variants['cuda_arch'].value
+                cuda_arch = cuda_arch_list[0]
+                sycl_target_platform = "-fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_{0}".format(cuda_arch)
+            if "sycl_target_platform=amd" in self.spec:
+                amdgpu_target_list = spec.variants['amdgpu_target'].value
+                amdgpu_target = amdgpu_target_list[0]
+                sycl_target_platform = "-fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch={0}".format(amdgpu_target)
+            args += [self.define("HPX_WITH_SYCL_FLAGS", sycl_target_platform)]
 
         # Instrumentation
         args += self.instrumentation_args()
