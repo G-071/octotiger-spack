@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack.error import SpackError
 from spack.package import *
 
 
@@ -27,7 +28,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('kokkos', default=True,
             description='Build octotiger with kokkos based kernels')
     variant('griddim', default='8', description='Octotiger grid size',
-            values=('8'), multi=False)
+            multi=False)
     variant('theta_minimum', default='0.34', description='Octotiger minimal allowed theta value',
             values=('0.34', '0.5', '0.16'), multi=False)
     variant('kokkos_hpx_kernels', default=False,
@@ -157,6 +158,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
         # Tests
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
+        if self.run_tests and not (spec.satisfies("griddim=16") or spec.satisfies("griddim=16")):
+            raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
+                "Disable tests or change griddim!")
         if spec.satisfies("%clang") or spec.satisfies("+rocm"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
@@ -166,6 +170,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append('-DOCTOTIGER_WITH_GRIDDIM={0}'.format(spec.variants['griddim'].value))
         args.append('-DOCTOTIGER_THETA_MINIMUM={0}'.format(spec.variants['theta_minimum'].value))
         args.append(self.define('OCTOTIGER_WITH_MAX_NUMBER_FIELDS', '15'))
+        if int(spec.variants["griddim"].value) > 20:
+            args.append('-DOCTOTIGER_DISABLE_ILIST=ON')
+        else:
+            args.append('-DOCTOTIGER_DISABLE_ILIST=OFF')
 
         # Misc
         args.append(self.define('OCTOTIGER_WITH_UNBUFFERED_STDOUT', 'OFF'))
