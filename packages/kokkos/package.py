@@ -6,6 +6,7 @@ import os.path
 
 from llnl.util import tty
 
+from spack.error import SpackError
 from spack.package import *
 
 
@@ -176,12 +177,21 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         values=("none",) + intel_gpu_arches,
         description="Intel GPU architecture",
     )
+    variant(
+        "use_unsupported_sycl_arch",
+        default="none",
+        values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),
+        description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False
+    )
+    patch('sycl_hip_arch.patch', when='+sycl')
 
     devices_values = list(devices_variants.keys())
     for dev in devices_variants:
         dflt, desc = devices_variants[dev]
         variant(dev, default=dflt, description=desc)
     conflicts("+cuda", when="+rocm", msg="CUDA and ROCm are not compatible in Kokkos.")
+    conflicts("+cuda", when="+sycl", msg="CUDA and SYCL are not compatible in Kokkos.")
+    conflicts("+rocm", when="+sycl", msg="ROCm and SYCL are not compatible in Kokkos.")
 
     options_values = list(options_variants.keys())
     for opt in options_values:
@@ -201,6 +211,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos-nvcc-wrapper@develop", when="@develop+wrapper")
     depends_on("kokkos-nvcc-wrapper@master", when="@master+wrapper")
     conflicts("+wrapper", when="~cuda")
+    depends_on("dpcpp", when="+sycl")
 
     stds = ["11", "14", "17", "20"]
     # TODO: This should be named cxxstd for consistency with other packages
@@ -279,7 +290,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         from_variant = self.define_from_variant
 
         if spec.satisfies("~wrapper+cuda") and not (
-            spec.satisfies("%clang") or spec.satisfies("%cce")
+            spec.satisfies("%clang") or spec.satisfies("%cce") or spec.satisfies("+sycl")
         ):
             raise InstallError("Kokkos requires +wrapper when using +cuda" "without clang")
 
@@ -296,6 +307,24 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
                 if not cuda_arch == "none":
                     kokkos_arch_name = self.spack_cuda_arch_map[cuda_arch]
                     spack_microarches.append(kokkos_arch_name)
+
+        if "+sycl" in spec:
+            if not spec.satisfies("use_unsupported_sycl_arch=none"):
+                options.append(self.define("Kokkos_ENABLE_UNSUPPORTED_ARCHS", True))
+                use_unsupported_sycl_arch = spec.variants["use_unsupported_sycl_arch"].value
+                if use_unsupported_sycl_arch in self.spack_cuda_arch_map:
+                    kokkos_arch_name = self.spack_cuda_arch_map[use_unsupported_sycl_arch]
+                    spack_microarches.append(kokkos_arch_name)
+                    if not spec.satisfies("^dpcpp +cuda"):
+                        raise SpackError("dpcpp requires +cuda for target arch {0}".format(use_unsupported_sycl_arch))
+                elif use_unsupported_sycl_arch in self.amdgpu_arch_map:
+                    spack_microarches.append(self.amdgpu_arch_map[use_unsupported_sycl_arch])
+                    if not spec.satisfies("^dpcpp +hip hip-platform=AMD"):
+                        raise SpackError("dpcpp requires +cuda for target arch {0}".format(use_unsupported_sycl_arch))
+                else:
+                    raise SpackError("Unrecognized target: {0}".format(use_unsupported_sycl_arch))
+        elif not spec.satisfies("use_unsupported_sycl_arch=none"):
+            raise SpackError("use_unsupported_sycl_arch != none requires +sycl")
 
         kokkos_microarch_name = self.get_microarch(spec.target)
         if kokkos_microarch_name:
@@ -326,7 +355,9 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
             if spec.variants[tpl].value:
                 options.append(self.define(tpl + "_DIR", spec[tpl].prefix))
 
-        if "+rocm" in self.spec:
+        if "+sycl ^dpcpp" in self.spec:
+            options.append(self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
+        elif "+rocm" in self.spec:
             options.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
         elif "+wrapper" in self.spec:
             options.append(
@@ -384,7 +415,6 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         if not self.run_test(cmake_bin, options=cmake_args, purpose="Generate the Makefile"):
             tty.warn("Skipping kokkos test: failed to generate Makefile")
             return
-
         if not self.run_test("make", purpose="Build test software"):
             tty.warn("Skipping kokkos test: failed to build test")
 
