@@ -18,7 +18,7 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     version("0.2.0", sha256="289b711cea26afe80be002fc521234c9194cd0e8f69863f3b08b654674dbe5d5")
     version("0.1.0", sha256="24edb817d0969f4aea1b68eab4984c2ea9a58f4760a9b8395e20f85b178f0850")
 
-    #patch('version.patch')
+    patch('allow_divergent_builds.patch')
     cxxstds = ("14", "17", "20")
     variant(
         "cxxstd",
@@ -48,6 +48,8 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx@1.6", when="@0.1")
     depends_on("kokkos@3.2:3.5", when="@0.1")
 
+    depends_on("dpcpp", when="+sycl")
+
     for cxxstd in cxxstds:
         depends_on("hpx cxxstd={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
         depends_on("kokkos std={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
@@ -65,14 +67,26 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +rocm", when="+rocm")
 
     conflicts("+sycl", when="@:0.3.0")
+    build_directory = "spack-build"
     
-def cmake_args(self):
-    args = []
+    def cmake_args(self):
+        spec, args = self.spec, []
 
-    args.append(self.define_from_variant('HPX_KOKKOS_CUDA_FUTURE_TYPE', 'cuda_future_type'))
-    args.append(self.define_from_variant('HPX_KOKKOS_SYCL_FUTURE_TYPE', 'sycl_future_type'))
+        args.append(self.define_from_variant('HPX_KOKKOS_CUDA_FUTURE_TYPE', 'cuda_future_type'))
+        args.append(self.define_from_variant('HPX_KOKKOS_SYCL_FUTURE_TYPE', 'sycl_future_type'))
 
-    args.append(self.define('HPX_KOKKOS_ENABLE_TESTS', self.run_tests))
-    args.append(self.define('HPX_KOKKOS_ENABLE_BENCHMARKS', self.run_tests))
+        args.append(self.define('HPX_KOKKOS_ENABLE_TESTS', self.run_tests))
+        args.append(self.define('HPX_KOKKOS_ENABLE_BENCHMARKS', self.run_tests))
 
-    return args
+        if "+rocm" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
+        if "+sycl ^dpcpp" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+            
+        return args
+
+    def check(self):
+        if self.run_tests:
+            with working_dir(self.build_directory):
+                make("tests")
+                ctest("--output-on-failure")

@@ -112,8 +112,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # 'adapt-kokkos-wrapper-for-hpx.patch'] )
 
     def cmake_args(self):
-        spec = self.spec
-        args = []
+        spec, args = self.spec, []
 
         # CUDA & Kokkos config
         args.append(self.define_from_variant('OCTOTIGER_WITH_CUDA', 'cuda'))

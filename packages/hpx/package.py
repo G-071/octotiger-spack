@@ -87,8 +87,8 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     variant("sycl", default=False, description="Enable SYCL integration.")
     variant(
-        "sycl_target_platform",
-        values=any_combination_of("intel", "nvidia", "amd", "nvidia_with_hip").with_default("intel"),
+        "sycl_target_platform", default="intel",
+        values=("intel", "nvidia", "amd", "nvidia_with_hip"),
         description="GPU target plaform for SYCL compilation.",
     )
 
