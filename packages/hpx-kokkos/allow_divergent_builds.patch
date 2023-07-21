@@ -1,0 +1,52 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 417789a..726b4db 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -23,30 +23,18 @@ if(Kokkos_ENABLE_CUDA)
+   if(NOT HPX_WITH_CUDA)
+     message(FATAL_ERROR "Kokkos was built with CUDA support, HPX was not")
+   endif()
+-else()
+-  if(HPX_WITH_CUDA)
+-    message(FATAL_ERROR "HPX was built with CUDA support, Kokkos was not")
+-  endif()
+ endif()
+ 
+ if(Kokkos_ENABLE_HIP)
+   if(NOT HPX_WITH_HIP)
+     message(FATAL_ERROR "Kokkos was built with HIP support, HPX was not")
+   endif()
+-else()
+-  if(HPX_WITH_HIP)
+-    message(FATAL_ERROR "HPX was built with HIP support, Kokkos was not")
+-  endif()
+ endif()
+ 
+ if(Kokkos_ENABLE_SYCL)
+   if(NOT HPX_WITH_SYCL)
+     message(FATAL_ERROR "Kokkos was built with SYCL support, HPX was not")
+   endif()
+-else()
+-  if(HPX_WITH_SYCL)
+-    message(FATAL_ERROR "HPX was built with SYCL support, Kokkos was not")
+-  endif()
+ endif()
+ 
+ if(HPX_WITH_HIP OR Kokkos_ENABLE_HIP)
+diff --git a/src/hpx/kokkos/detail/polling_helper.hpp b/src/hpx/kokkos/detail/polling_helper.hpp
+index 7935151..4b00659 100644
+--- a/src/hpx/kokkos/detail/polling_helper.hpp
++++ b/src/hpx/kokkos/detail/polling_helper.hpp
+@@ -23,10 +23,10 @@ namespace kokkos {
+ namespace detail {
+ struct polling_helper {
+ #if (defined(HPX_HAVE_CUDA) || defined(HPX_HAVE_HIP)) && (HPX_KOKKOS_CUDA_FUTURE_TYPE == 0)
+-  hpx::cuda::experimental::enable_user_polling p;
++  hpx::cuda::experimental::enable_user_polling p_cuda;
+ #endif
+ #if defined(HPX_HAVE_SYCL)
+-  hpx::sycl::experimental::enable_user_polling p;
++  hpx::sycl::experimental::enable_user_polling p_sycl;
+ #endif
+ };
+ } // namespace detail
