@@ -22,34 +22,44 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     version("master", branch="master", submodules=True)
 
     variant('cuda', default=False,
-            description='Build octotiger with CUDA (also allows Kokkos kernels to run with CUDA)')
+            description=("Build octotiger with CUDA (also allows "
+                         "Kokkos kernels to run with CUDA)"))
     variant('rocm', default=False,
-            description='Build octotiger with ROCm/HIP (also allows Kokkos kernels to run with HIP)')
+            description=("Build octotiger with ROCm/HIP (also allows"
+                         " Kokkos kernels to run with HIP)"))
     variant('sycl', default=True,
-            description='Build octotiger with SYCL (also allows Kokkos kernels to run with SYCL)')
+            description=("Build octotiger with SYCL (also allows Kokkos"
+                         " kernels to run with SYCL)"))
     variant('kokkos', default=True,
             description='Build octotiger with kokkos based kernels')
     variant('griddim', default='8', description='Octotiger grid size',
             multi=False)
-    variant('theta_minimum', default='0.34', description='Octotiger minimal allowed theta value',
+    variant('theta_minimum', default='0.34',
+            description='Octotiger minimal allowed theta value',
             values=('0.34', '0.5', '0.16'), multi=False)
-    variant('kokkos_hpx_kernels', default=False,
-            description='Use HPX execution space for CPU Kokkos kernels (instead of the Serial space)')
-    variant('monopole_host_tasks', default='1',
-            description='Tasks per monopole kernel invocation when using the Kokkos HPX execution space',
+    variant('kokkos_hpx_kernels', default=False, when='+kokkos ^kokkos@4.1.0:',
+            description=("Use HPX execution space for CPU Kokkos kernels"
+                         " (instead of the Serial space)"))
+    variant('monopole_host_tasks', default='1', when='+kokkos_hpx_kernels',
+            description=("Tasks per monopole kernel invocation when using"
+                         "the Kokkos HPX execution space"),
             values=('1', '4', '16'), multi=False)
-    variant('multipole_host_tasks', default='1',
-            description='Tasks per multipole kernel invocation when using the Kokkos HPX execution space',
+    variant('multipole_host_tasks', default='1', when='+kokkos_hpx_kernels',
+            description=("Tasks per multipole kernel invocation when using"
+                         " the Kokkos HPX execution space"),
             values=('1', '4', '16', '64'), multi=False)
-    variant('hydro_host_tasks', default='1',
-            description='Tasks per hydro kernel invocation when using the Kokkos HPX execution space',
-            multi=False)
-    variant('simd_library', default='KOKKOS',
-            description='Use either kokkos (for kokkos simd types) or std (for std::experimental::simd types)',
+    variant('hydro_host_tasks', default='1', when='+kokkos_hpx_kernels',
+            description=("Tasks per hydro kernel invocation when using the"
+                         " Kokkos HPX execution space"), multi=False)
+    variant('simd_library', default='KOKKOS', when='+kokkos',
+            description=("Use either kokkos (for kokkos simd types) or std"
+                         " (for std::experimental::simd types)"),
             values=('KOKKOS', 'STD'), multi=False)
-    variant('simd_extension', default='DISCOVER',
-            description='Enforce specific SIMD extension or autoselect (discover) appropriate one',
-            values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'), multi=False)
+    variant('simd_extension', default='DISCOVER', when='+kokkos',
+            description=("Enforce specific SIMD extension or autoselect"
+                         "(discover) appropriate one"),
+            values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'),
+            multi=False)
 
     depends_on('cppuddle +hpx_support')
 
@@ -69,11 +79,12 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('cuda', when='+cuda')
 
     hpx_string = 'hpx@1.8.0: cxxstd=17'
-    depends_on(hpx_string + ' +cuda +async_cuda ', when='+cuda') 
+    depends_on(hpx_string + ' +cuda +async_cuda ', when='+cuda')
     depends_on(hpx_string + ' -cuda -rocm', when='-cuda -rocm')
     # networking=mpi ?
 
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
+
     # This loop propgates the chosem cuda_arch to kokkos.
     # TODO find better way to ensure all dependencies use the same cuda_arch
     for sm_ in CudaPackage.cuda_arch_values:
@@ -81,22 +92,27 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             sm_), when='+kokkos +cuda cuda_arch={0} %gcc'.format(sm_))
         depends_on(kokkos_string + ' +cuda +cuda_lambda -wrapper cuda_arch={0}'.format(
             sm_), when='+kokkos +cuda cuda_arch={0} %clang'.format(sm_))
+
     # This loop propgates the chosem amdgpu_target to hpx, kokkos and hpx-kokkos.
-    # Without it we would need to manually add the same amdgpu_target via ^ to them manually.
+    # Without it we would need to add the same amdgpu_target via ^ to them manually.
     # TODO find better way to ensure all dependencies use the same amdgpu_target
     for gfx in ROCmPackage.amdgpu_targets:
         depends_on(kokkos_string + ' +rocm amdgpu_target={0}'.format(gfx),
                    when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
-        depends_on(hpx_string + ' +rocm amdgpu_target={0}'.format(gfx), patches=['hpx_rocblas.patch'],
-                   when='+rocm amdgpu_target={0}'.format(gfx)) 
+        depends_on(hpx_string + ' +rocm amdgpu_target={0}'.format(gfx),
+                   patches=['hpx_rocblas.patch'],
+                   when='+rocm amdgpu_target={0}'.format(gfx))
         depends_on('hpx-kokkos@master +rocm amdgpu_target={0}'.format(gfx),
-                   when='+kokkos +rocm amdgpu_target={0}'.format(gfx), patches=['version.patch'])
+                   when='+kokkos +rocm amdgpu_target={0}'.format(gfx),
+                   patches=['version.patch'])
+
     depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',
                when='+kokkos -cuda')
     depends_on("kokkos@4.1.00: +hpx +hpx_async_dispatch ",
                when="+kokkos_hpx_kernels")
     depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
-               patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch'])
+               patches=['adapt-kokkos-wrapper-for-nix.patch',
+                        'adapt-kokkos-wrapper-for-hpx.patch'])
     depends_on("kokkos +sycl ", when="+sycl")
     depends_on("hpx +sycl ", when="+sycl")
     depends_on("hpx-kokkos +sycl ", when="+sycl")
@@ -106,16 +122,11 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
-    conflicts("+cuda", when="+rocm", msg="CUDA and ROCm are not compatible in Octo-Tiger.")
+    conflicts("+cuda", when="+rocm",
+              msg="CUDA and ROCm are not compatible in Octo-Tiger.")
     # Without Kokkos the rocm arch flags are all wrong
-    conflicts("+rocm", when="-kokkos", msg="ROCm support requires building with Kokkos.")
-
-    # depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper ', when='+kokkos
-    # +cuda', patches=['adapt-kokkos-wrapper-for-nix.patch',
-    # 'adapt-kokkos-wrapper-for-hpx.patch'])
-    # depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',when='+kokkos
-    # -cuda', patches=['adapt-kokkos-wrapper-for-nix.patch',
-    # 'adapt-kokkos-wrapper-for-hpx.patch'] )
+    conflicts("+rocm", when="-kokkos",
+              msg="ROCm support requires building with Kokkos.")
 
     def cmake_args(self):
         spec, args = self.spec, []
@@ -134,7 +145,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
         if "+sycl ^dpcpp" in self.spec:
-            args += [self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+            args += [self.define("CMAKE_CXX_COMPILER",
+                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
 
         # SIMD & CPU kernel config
         args.append(self.define_from_variant(
@@ -165,9 +177,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
         # Tests
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
-        if self.run_tests and not (spec.satisfies("griddim=8") or spec.satisfies("griddim=16")):
+        if self.run_tests and not (spec.satisfies("griddim=8")
+                                   or spec.satisfies("griddim=16")):
             raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
-                "Disable tests or change griddim!")
+                             "Disable tests or change griddim!")
         if spec.satisfies("%clang") or spec.satisfies("+rocm") or spec.satisfies("+sycl"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:

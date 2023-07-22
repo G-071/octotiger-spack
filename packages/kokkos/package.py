@@ -177,12 +177,16 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         values=("none",) + intel_gpu_arches,
         description="Intel GPU architecture",
     )
+    # This allows running the SYCL execution space on NVIDIA GPUs
+    # which is handy for testing the SYCL implementation when there is no Intel GPU available.
+    # Note: do not use for production runs (use the CUDA execution space instead)
     variant(
         "use_unsupported_sycl_arch",
         default="none",
         values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),
         description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False
     )
+    # Small patch to CMakeLists, allowing to run the SYCL execution space on AMD GPUs as well
     patch('sycl_hip_arch.patch', when='+sycl')
 
     devices_values = list(devices_variants.keys())
@@ -316,11 +320,13 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
                     kokkos_arch_name = self.spack_cuda_arch_map[use_unsupported_sycl_arch]
                     spack_microarches.append(kokkos_arch_name)
                     if not spec.satisfies("^dpcpp +cuda"):
-                        raise SpackError("dpcpp requires +cuda for target arch {0}".format(use_unsupported_sycl_arch))
+                        raise SpackError(("dpcpp requires +cuda for target arch "
+                                          "{0}").format(use_unsupported_sycl_arch))
                 elif use_unsupported_sycl_arch in self.amdgpu_arch_map:
                     spack_microarches.append(self.amdgpu_arch_map[use_unsupported_sycl_arch])
                     if not spec.satisfies("^dpcpp +hip hip-platform=AMD"):
-                        raise SpackError("dpcpp requires +cuda for target arch {0}".format(use_unsupported_sycl_arch))
+                        raise SpackErrora(("dpcpp requires +cuda for target arch"
+                                           "{0}").format(use_unsupported_sycl_arch))
                 else:
                     raise SpackError("Unrecognized target: {0}".format(use_unsupported_sycl_arch))
         elif not spec.satisfies("use_unsupported_sycl_arch=none"):
@@ -356,7 +362,8 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
                 options.append(self.define(tpl + "_DIR", spec[tpl].prefix))
 
         if "+sycl ^dpcpp" in self.spec:
-            options.append(self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
+            options.append(self.define("CMAKE_CXX_COMPILER",
+                                       "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
         elif "+rocm" in self.spec:
             options.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
         elif "+wrapper" in self.spec:
