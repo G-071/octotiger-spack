@@ -21,10 +21,12 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master", submodules=True)
 
-    variant('cuda', default=True,
+    variant('cuda', default=False,
             description='Build octotiger with CUDA (also allows Kokkos kernels to run with CUDA)')
     variant('rocm', default=False,
             description='Build octotiger with ROCm/HIP (also allows Kokkos kernels to run with HIP)')
+    variant('sycl', default=True,
+            description='Build octotiger with SYCL (also allows Kokkos kernels to run with SYCL)')
     variant('kokkos', default=True,
             description='Build octotiger with kokkos based kernels')
     variant('griddim', default='8', description='Octotiger grid size',
@@ -95,6 +97,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                when="+kokkos_hpx_kernels")
     depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
                patches=['adapt-kokkos-wrapper-for-nix.patch', 'adapt-kokkos-wrapper-for-hpx.patch'])
+    depends_on("kokkos +sycl ", when="+sycl")
+    depends_on("hpx +sycl ", when="+sycl")
+    depends_on("hpx-kokkos +sycl ", when="+sycl")
+    depends_on("dpcpp", when="+sycl")
 
     conflicts("+cuda", when="cuda_arch=none")
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
@@ -127,6 +133,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append(self.define_from_variant('OCTOTIGER_WITH_HIP', 'rocm'))
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
+        if "+sycl ^dpcpp" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
 
         # SIMD & CPU kernel config
         args.append(self.define_from_variant(
@@ -157,10 +165,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
         # Tests
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
-        if self.run_tests and not (spec.satisfies("griddim=16") or spec.satisfies("griddim=16")):
+        if self.run_tests and not (spec.satisfies("griddim=8") or spec.satisfies("griddim=16")):
             raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
                 "Disable tests or change griddim!")
-        if spec.satisfies("%clang") or spec.satisfies("+rocm"):
+        if spec.satisfies("%clang") or spec.satisfies("+rocm") or spec.satisfies("+sycl"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))

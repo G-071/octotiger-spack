@@ -88,5 +88,7 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     def check(self):
         if self.run_tests:
             with working_dir(self.build_directory):
+                # These targets are not build normally, so we just build them now
                 make("tests")
+                make("benchmarks")
                 ctest("--output-on-failure")

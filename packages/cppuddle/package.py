@@ -50,6 +50,8 @@ class Cppuddle(CMakePackage):
                 ]
         if spec.satisfies("^hpx +rocm"):
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
+        if spec.satisfies("^hpx +sycl"):
+            args += [self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
         return args
 
     def check(self):

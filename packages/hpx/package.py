@@ -87,9 +87,9 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     variant("sycl", default=False, description="Enable SYCL integration.")
     variant(
-        "sycl_target_platform", default="intel",
-        values=("intel", "nvidia", "amd", "nvidia_with_hip"),
-        description="GPU target plaform for SYCL compilation.",
+        "sycl_target_arch", default="none",
+        values=(("none", "intel", "nvidia") + CudaPackage.cuda_arch_values + ROCmPackage.amdgpu_targets),
+        description="GPU target for SYCL. Can be generic with \'intel\' and \'nvidia\', or target a specific GPU arch (required for AMD GPUs, optional for NVIDIA GPUs, unavaible for Intel GPUs - just select intel for those).",
     )
 
     variant("tools", default=False, description="Build HPX tools")
@@ -130,19 +130,21 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("papi", when="instrumentation=papi")
     depends_on("valgrind", when="instrumentation=valgrind")
 
-    depends_on("dpcpp@2023-03:", when="+sycl sycl_target_platform=intel")
-    depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_platform=nvidia")
-    depends_on("dpcpp@2023-03: +hip hip-platform=AMD", when="+sycl sycl_target_platform=amd")
-    depends_on("dpcpp@2023-03: +hip hip-platform=NVIDIA", when="+sycl sycl_target_platform=nvidia_with_hip")
+    depends_on("dpcpp@2023-03:", when="+sycl ")
+    depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_arch=nvidia")
+    for cuda_arch in CudaPackage.cuda_arch_values:
+        depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_arch={0}".format(cuda_arch))
+    for amdgpu_arch in ROCmPackage.amdgpu_targets:
+        depends_on("dpcpp@2023-03: +hip hip-platform=AMD", when="+sycl sycl_target_arch={0}".format(amdgpu_arch))
+
+    #depends_on("dpcpp@2023-03: +hip hip-platform=NVIDIA", when="+sycl sycl_target_platform=nvidia_with_hip")
 
     conflicts("networking=lci", when="@:1.8.1")
     # Only ROCm or CUDA maybe be enabled at once
     conflicts("+rocm", when="+cuda")
     # SYCL CUDA/HIP backends require target arch informations:
+    conflicts("+sycl", when="sycl_target_arch=none", msg="Additional information to select the correct sycl backend. Use either a specific nvidia/amdgpu GPU architecture (useful for compiling the tests/examples), or \'nvidia\' \'intel\' in case a specific architecture is not targeted.")
     conflicts("+sycl", when="@:1.8.1", msg="HPX SYCL support requires at least hpx version 1.9.0")
-    conflicts("sycl_target_platform=nvidia", when="cuda_arch=none")
-    conflicts("sycl_target_platform=nvidia_with_hip", when="cuda_arch=none")
-    conflicts("sycl_target_platform=amd", when="amdgpu_target=none")
 
     # Restrictions for 1.9.X
     with when("@1.9:"):
@@ -270,16 +272,20 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             args += [self.define("CMAKE_CXX_COMPILER", "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
             # Populate dpcpp target flags! See
             # https://github.com/intel/llvm/blob/sycl/sycl/doc/GetStartedGuide.md
-            sycl_target_platform=""
-            if ("sycl_target_platform=nvidia" in self.spec) or ("sycl_target_platform=nvidia_with_hip" in self.spec):
-                cuda_arch_list = spec.variants['cuda_arch'].value
-                cuda_arch = cuda_arch_list[0]
-                sycl_target_platform = "-fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_{0}".format(cuda_arch)
-            if "sycl_target_platform=amd" in self.spec:
-                amdgpu_target_list = spec.variants['amdgpu_target'].value
-                amdgpu_target = amdgpu_target_list[0]
-                sycl_target_platform = "-fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch={0}".format(amdgpu_target)
-            args += [self.define("HPX_WITH_SYCL_FLAGS", sycl_target_platform)]
+            sycl_target_flags=""
+            sycl_target = spec.variants["sycl_target_arch"].value
+            if sycl_target in self.cuda_arch_values:
+                sycl_target_flags = "-fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_{0}".format(sycl_target)
+            elif sycl_target == "nvidia":
+                sycl_target_flags = "-fsycl-targets=nvptx64-nvidia-cuda "
+            elif sycl_target in amdgpu_targets:
+                sycl_target_flags = "-fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch={0}".format(sycl_target)
+            elif sycl_target == "intel":
+                pass # no flags to add here for now
+            else:
+                raise SpackError("Unrecognized sycl_target_arch: {0}".format(sycl_target))
+            # Pass required target flags to HPX (will be appended when compiling SYCL src files)
+            args += [self.define("HPX_WITH_SYCL_FLAGS", sycl_target_flags)]
 
         # Instrumentation
         args += self.instrumentation_args()
