@@ -3,7 +3,7 @@
 This repository contains the spack package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
 Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and uncomfortable to use.
 
-### List of added/modified packages
+### List of added/modified packages:
 
 - Added Octo-Tiger package
 - Added CPPuddle package
@@ -88,7 +88,7 @@ cd spack_build_id #exact dir name ist printed by the last command
 make -j32
 ctest --output-on-failure
 ```
-### Notes on nix/nixos usage
+### Notes for usage on nixos / with nix:
 For now, use [this spack fork](https://github.com/G-071/spack/tree/nixos_config) when using octotiger-spack on nixos. 
 It contains multiple small workarounds and a nix-shell (based on the suggestion in [this spack PR](https://github.com/spack/spack/pull/33394)). 
 
