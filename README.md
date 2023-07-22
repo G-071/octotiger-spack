@@ -1,7 +1,7 @@
 ## Octotiger-Spack
 
 This repository contains the spack package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
-Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and annoying to use.
+Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and uncomfortable to use.
 
 ### List of added/modified packages
 
@@ -12,7 +12,7 @@ Additionally, the repository also includes new/modified/updated spack packages o
 - Modified HPX-Kokkos package by adding SYCL variant, adding variants for the future types and exposing the hpx-kokkos tests to spack
 - Modified Kokkos package by adding an use_unsupported_sycl_arch variant (which allows using the SYCL execution space on non-Intel GPU - which in turn allowed me to test octotiger with SYCL on my available hardware). Also includes a patch for the kokkos CMakeLists which allows using this on AMDGPUs (not just NVIDIA)
 - Added some patches for kokkos/kokkos-nvcc wrapper for NIXos usage
-- Modified dpcpp package by using the package.py from the spack PR 38981 and by adding  ```def libs``` which avoids the library/linking issue
+- Modified dpcpp package by using the package.py from the [this spack PR](https://github.com/spack/spack/pull/38981) that's updating (not merged as of yet) and by adding  ```def libs``` which avoids the library/linking issue
   
 Note: Additions and changes might eventually be submitted to the main spack repository! For now, this repo allows me to rapidly experiment with different builds on different machines until I get to the point where all Octo-Tiger features and relevant versions are working on the intended target platforms.
 
@@ -33,7 +33,7 @@ spack external find cuda # replace cuda by desired packages or leave blank to ge
 spack info octotiger
 ```
 ### Usage examples
-Basic Octo-Tiger installation:
+- Basic Octo-Tiger installation:
 ```sh
 # Basic octotiger installation
 spack install --fresh --test=root octotiger~cuda~kokkos
@@ -43,8 +43,7 @@ spack install --fresh --test=root octotiger+cuda+kokkos%gcc@11^cuda@11.8.89^cmak
 spack load octotiger~cuda~kokkos
 octotiger --help
 ```
-
-Octo-Tiger CUDA/Kokkos dev build (RTX 2060):
+- Octo-Tiger CUDA/Kokkos dev build (RTX 2060):
 ```sh
 module load cuda/11.8
 spack external find cuda # finds cuda@11.8.89 in this example...
@@ -59,8 +58,7 @@ make -j16
 ctest --output-on-failure
 ./octotiger --help
 ```
-
-Octo-Tiger HIP/Kokkos dev build (MI100):
+- Octo-Tiger HIP/Kokkos dev build (MI100):
 ```sh
 module load rocm/5.4.6
 spack compiler find # should find rocmcc@5.4.6
@@ -77,8 +75,7 @@ cd spack_build_id #exact dir name ist printed by the last command
 make -j32
 ctest --output-on-failure
 ```
-
-Octo-Tiger SYCL/Kokkos dev build (V100):
+- Octo-Tiger SYCL/Kokkos dev build (V100):
 ```sh
 module load cuda/12
 git clone https://github.com/STEllAR-GROUP/octotiger
@@ -92,4 +89,7 @@ make -j32
 ctest --output-on-failure
 ```
 ### Notes on nix/nixos usage
-For now, use [this spack fork](https://github.com/G-071/spack/tree/nixos_config) when using octotiger-spack on nixos. It contains multiple small workarounds and a nix-shell (based on the suggestion in [this spack PR](https://github.com/spack/spack/pull/33394)). To use, go to the spack root directory, create the new tmp dir spack_tmp (avoids issues to to small tmp dirs on some of my machines) and load the shell via ```nix-shell share/spack/shell.nix```. Afterwards, use spack as usual - I tested it with the Kokkos+CUDA uage example above and it seems to work!
+For now, use [this spack fork](https://github.com/G-071/spack/tree/nixos_config) when using octotiger-spack on nixos. 
+It contains multiple small workarounds and a nix-shell (based on the suggestion in [this spack PR](https://github.com/spack/spack/pull/33394)). 
+
+To use it, go to the spack root directory, create the new tmp dir spack_tmp (avoids issues to to small tmp dirs on some of my machines) and load the shell via ```nix-shell share/spack/shell.nix```. Afterwards, use spack as usual! I tested it with the Kokkos/CUDA usage example posted above and it seems to work well.
