@@ -61,6 +61,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'),
             multi=False)
 
+    patch('add_sycl_lib_to_tools.patch', when='+sycl')
     depends_on('cppuddle +hpx_support')
 
     depends_on('hpx-kokkos@master +cuda',
@@ -128,6 +129,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+rocm", when="-kokkos",
               msg="ROCm support requires building with Kokkos.")
 
+    build_directory = "spack-build"
+
     def cmake_args(self):
         spec, args = self.spec, []
 
@@ -147,6 +150,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if "+sycl ^dpcpp" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER",
                                  "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+            #env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec.prefix, "lib"))
 
         # SIMD & CPU kernel config
         args.append(self.define_from_variant(
@@ -200,3 +204,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDS', 'ON'))
 
         return args
+
+    def check(self):
+        if self.run_tests:
+            with working_dir(self.build_directory):
+                ctest("--output-on-failure ")

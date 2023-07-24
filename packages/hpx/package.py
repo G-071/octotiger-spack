@@ -39,7 +39,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     generator("ninja")
 
-    def map_cxxstd(cxxstd): return "2a" if cxxstd == "20" else cxxstd
+    map_cxxstd = lambda cxxstd: "2a" if cxxstd == "20" else cxxstd
     cxxstds = ("11", "14", "17", "20")
     variant(
         "cxxstd",
