@@ -21,12 +21,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master", submodules=True)
 
-    variant('cuda', default=False,
-            description=("Build octotiger with CUDA (also allows "
-                         "Kokkos kernels to run with CUDA)"))
-    variant('rocm', default=False,
-            description=("Build octotiger with ROCm/HIP (also allows"
-                         " Kokkos kernels to run with HIP)"))
     variant('sycl', default=True,
             description=("Build octotiger with SYCL (also allows Kokkos"
                          " kernels to run with SYCL)"))
@@ -209,3 +203,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if self.run_tests:
             with working_dir(self.build_directory):
                 ctest("--output-on-failure ")
+
+    # Not required due to adding setup_dependent environment in the dpcpp package
+    # def setup_run_environment(self, env):
+    #     env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec["dpcpp"].prefix, "lib"))
+
+    # def setup_build_environment(self, env):
+    #     env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec["dpcpp"].prefix, "lib"))
