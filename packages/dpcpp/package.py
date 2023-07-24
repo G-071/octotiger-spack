@@ -194,12 +194,6 @@ class Dpcpp(CMakePackage):
             result = os.path.join(self.spec.prefix.bin, "clang++")
         return result
 
-    @property
-    def libs(self):
-        lib_path = join_path(self.component_prefix, "lib")
-        lib_path = lib_path if isdir(lib_path) else dirname(lib_path)
-        return find_libraries("*", root=lib_path, shared=True, recursive=True)
-
     @run_after("install")
     def post_install(self):
         clang_cpp_path = os.path.join(self.spec.prefix.bin, "clang++")
@@ -211,6 +205,12 @@ class Dpcpp(CMakePackage):
     def setup_run_environment(self, env):
         env.set("CC", join_path(self.spec.prefix.bin, "clang"))
         env.set("CXX", join_path(self.spec.prefix.bin, "clang++"))
+
+    def setup_dependent_run_environment(self, env, dependent_spec):
+        env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec.prefix, "lib"))
+
+    def setup_dependent_build_environment(self, env, dependent_spec):
+        env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec.prefix, "lib"))
 
 
 def get_llvm_targets_to_build(family):

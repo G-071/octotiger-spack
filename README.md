@@ -12,7 +12,7 @@ Additionally, the repository also includes new/modified/updated spack packages o
 - Modified HPX-Kokkos package by adding SYCL variant, adding variants for the future types and exposing the hpx-kokkos tests to spack
 - Modified Kokkos package by adding an use_unsupported_sycl_arch variant (which allows using the SYCL execution space on non-Intel GPU - which in turn allowed me to test octotiger with SYCL on my available hardware). Also includes a patch for the kokkos CMakeLists which allows using this on AMDGPUs (not just NVIDIA)
 - Added some patches for kokkos/kokkos-nvcc wrapper for NIXos usage
-- Modified dpcpp package by using the package.py from the [this spack PR](https://github.com/spack/spack/pull/38981) that's updating (not merged as of yet) and by adding  ```def libs``` which avoids the library/linking issue
+- Modified dpcpp package by using the package.py from the [this spack PR](https://github.com/spack/spack/pull/38981) that's updating (not merged as of yet) and by attempting to fix the library/linking issue in dependent packages
   
 Note: Additions and changes might eventually be submitted to the main spack repository! For now, this repo allows me to rapidly experiment with different builds on different machines until I get to the point where all Octo-Tiger features and relevant versions are working on the intended target platforms.
 
@@ -82,7 +82,7 @@ git clone https://github.com/STEllAR-GROUP/octotiger
 cd octotiger
 spack dev-build --fresh --drop-in bash --until cmake --test=root octotiger@master -cuda -rocm +sycl %gcc@10 ^kokkos use_unsupported_sycl_arch=70 ^hpx sycl_target_arch=70 ^cppuddle
 cd spack_build_id #exact dir name ist printed by the last command
-# Needed without the def libs fix in the dpcpp package
+# Needed without the libs fix in the dpcpp package
 #export LD_LIBRARY_PATH="$(spack find -l --paths dpcpp | tail -n1 | awk '{ print $3 }')/lib":${LD_LIBRARY_PATH}
 # Use with usual edit-make-test cycle after editing the src directory...
 make -j32
