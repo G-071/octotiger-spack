@@ -1,6 +1,6 @@
 ## Octotiger-Spack
 
-This repository contains the [spack](https://github.com/spack/spack#-spack) package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
+This repository contains the [Spack](https://github.com/spack/spack#-spack) package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
 Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and uncomfortable to use.
 
 ### List of added/modified packages:
