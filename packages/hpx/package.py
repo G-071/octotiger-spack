@@ -74,6 +74,13 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
         values=any_combination_of("tcp", "mpi", "lci").with_default("tcp"),
         description="Support for networking through parcelports",
     )
+    variant(
+        "lci_server",
+        values=any_combination_of("ipv", "ofi").with_default("ipv"),
+        description=("Hint whether libibverbs (ipv) or libfabrics (ofi)"
+                    "should be used if both are detected"),
+        when="networking=lci"
+    )
 
     default_generic_coroutines = True
     if sys.platform.startswith("linux") or sys.platform == "win32":
@@ -144,7 +151,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("dpcpp@2023-03: +hip hip-platform=AMD",
                    when="+sycl sycl_target_arch={0}".format(amdgpu_arch))
 
-    conflicts("networking=lci", when="@:1.8.1")
+    conflicts("networking=lci", when="@:1.8.0")
     # Only ROCm or CUDA maybe be enabled at once
     conflicts("+rocm", when="+cuda")
     # SYCL CUDA/HIP backends require target arch informations to
@@ -259,6 +266,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define("HPX_WITH_PARCELPORT_MPI", "networking=mpi" in spec),
             self.define("HPX_WITH_PARCELPORT_LCI", "networking=lci" in spec),
             self.define("HPX_WITH_FETCH_LCI", "networking=lci" in spec),
+            self.define_from_variant("LCI_SERVER", "lci_server"),
             self.define_from_variant("HPX_WITH_MAX_CPU_COUNT", "max_cpu_count"),
             self.define_from_variant("HPX_WITH_GENERIC_CONTEXT_COROUTINES", "generic_coroutines"),
             self.define("BOOST_ROOT", spec["boost"].prefix),
