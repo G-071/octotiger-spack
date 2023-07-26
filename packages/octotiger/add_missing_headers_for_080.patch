@@ -1,0 +1,42 @@
+diff --git a/octotiger/common_kernel/multiindex.hpp b/octotiger/common_kernel/multiindex.hpp
+index ace533f7..d7791206 100644
+--- a/octotiger/common_kernel/multiindex.hpp
++++ b/octotiger/common_kernel/multiindex.hpp
+@@ -11,7 +11,7 @@
+ 
+ #include <cmath>
+ #include <cstddef>
+-//#include <iostream>
++#include <iostream>
+ #include <vector>
+ 
+ namespace octotiger {
+diff --git a/octotiger/radiation/cuda_kernel.hpp b/octotiger/radiation/cuda_kernel.hpp
+index 90f4bcb7..134e1072 100644
+--- a/octotiger/radiation/cuda_kernel.hpp
++++ b/octotiger/radiation/cuda_kernel.hpp
+@@ -12,6 +12,7 @@
+ 
+ #include <array>
+ #include <vector>
++#include <stdexcept>
+ 
+ namespace octotiger { namespace radiation {
+     template <integer er_i, integer fx_i, integer fy_i, integer fz_i>
+diff --git a/src/unitiger/hydro_impl/hydro_cuda/reconstruct_cuda_kernel.cu b/src/unitiger/hydro_impl/hydro_cuda/reconstruct_cuda_kernel.cu
+index 45d194e0..c3358efd 100644
+--- a/src/unitiger/hydro_impl/hydro_cuda/reconstruct_cuda_kernel.cu
++++ b/src/unitiger/hydro_impl/hydro_cuda/reconstruct_cuda_kernel.cu
+@@ -1,4 +1,5 @@
+ #ifdef OCTOTIGER_HAVE_CUDA
++#include <cstdio>
+ 
+ __global__ void kernel_reconstruct(double *Q, double *D1, double *U_, double *X, double omega) {
+     bool first_thread = (blockIdx.x == 0) && (threadIdx.y == 0) && (threadIdx.z == 0);
+@@ -7,4 +8,4 @@ __global__ void kernel_reconstruct(double *Q, double *D1, double *U_, double *X,
+ 
+ }
+ 
+-#endif 
+\ No newline at end of file
++#endif 
