@@ -1,6 +1,6 @@
 ## Octotiger-Spack
 
-This repository contains the spack package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
+This repository contains the [spack](https://github.com/spack/spack) package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
 Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and uncomfortable to use.
 
 ### List of added/modified packages:
@@ -87,6 +87,17 @@ cd spack_build_id #exact dir name ist printed by the last command
 # Use with usual edit-make-test cycle after editing the src directory...
 make -j32
 ctest --output-on-failure
+```
+
+- Using old Octo-Tiger versions: [0.8.0 / Benchmark Version](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.8.0) and [0.9.0](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.9.0)
+```sh
+# 0.9.0 is the first version with Kokkos, a GPU hydro solver and ROCm support. 
+# Based on HPX 1.6.0 - 1.7.1
+spack install octotiger@0.9.0 +cuda +kokkos cuda_arch=70 %clang@12
+
+# 0.8.0 (or benchmark version) is the legacy version with basic GPU support in the gravity solver but CPU-only hydro kernels.
+# Based on HPX 1.4.1 
+spack install octotiger@0.8.0 +cuda cuda_arch=70 %gcc@11
 ```
 ### Notes for usage on nixos / with nix:
 For now, use [this spack fork](https://github.com/G-071/spack/tree/nixos_config) when using octotiger-spack on nixos. 
