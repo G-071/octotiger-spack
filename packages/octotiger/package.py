@@ -37,7 +37,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('theta_minimum', default='0.34', when="@0.8.0:",
             description='Octotiger minimal allowed theta value',
             values=('0.34', '0.5', '0.16'), multi=False)
-    variant('kokkos_hpx_kernels', default=False, when='@0.9.0: +kokkos ^kokkos@4.1.0:',
+    variant('kokkos_hpx_kernels', default=False, when='@0.9.0: +kokkos ',
             description=("Use HPX execution space for CPU Kokkos kernels"
                          " (instead of the Serial space)"))
     variant('monopole_host_tasks', default='1', when='@master +kokkos_hpx_kernels',
@@ -64,7 +64,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             description=("Enable aggressive fp-contract=fast for CPU- and fmad for GPU kernels. "
                          "Required to be False for hybrid CPU+GPU runs (same compute kernel is "
                          "run both on CPU and GPU)"))
-
 
     # Misc dependencies:
     depends_on('cmake@3.16.0:', type='build')
@@ -138,6 +137,12 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                patches=['adapt-kokkos-wrapper-for-nix.patch',
                         'adapt-kokkos-wrapper-for-hpx.patch'])
 
+    # Known conflicts
+
+    # See issue https://github.com/STEllAR-GROUP/hpx/issues/5799
+    conflicts("+kokkos ^kokkos@4.1.0: +cuda +hpx", when="%gcc",
+              msg=("Using hpx sender/receiver backend (kokkos@4.1.0:) with nvcc does not work."
+                   "Use clang or downgrade Kokkos, or deactivate +hpx"))
     conflicts("%gcc@12", when="@0.8.0",
             msg="Octotiger release 0.8.0 does not work with gcc@12 - try an older one!")
     conflicts("+cuda", when="cuda_arch=none")
