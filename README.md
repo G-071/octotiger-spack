@@ -6,7 +6,7 @@ Additionally, the repository also includes new/modified/updated spack packages o
 ### Package features:
 - Supports builds all CPU/GPU variants of Octotiger (Kokkos, CUDA, HIP, SYCL and the older Vc kernerls) and all available SIMD backends
 - Supports distributed builds (with the HPX networking backends tcp, mpi or lci)
-- Supports older versions of Octo-Tiger as well (namely [0.8.0 / Benchmark Version](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.8.0) and [0.9.0](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.9.0))
+- Supports older versions of Octo-Tiger as well ([0.8.0 / Benchmark Version](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.8.0) and [0.9.0](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.9.0))
 
 ### List of added/modified packages:
 
