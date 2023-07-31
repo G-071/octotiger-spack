@@ -130,8 +130,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                    patches=['hpx_rocblas.patch'],
                    when='+rocm amdgpu_target={0}'.format(gfx))
         depends_on('hpx-kokkos@master +rocm amdgpu_target={0}'.format(gfx),
-                   when='+kokkos +rocm amdgpu_target={0}'.format(gfx),
-                   patches=['version.patch'])
+                   when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
     # NVCC wrapper if needed (needs hpx patches):
     depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
                patches=['adapt-kokkos-wrapper-for-nix.patch',
