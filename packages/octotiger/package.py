@@ -40,15 +40,15 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('kokkos_hpx_kernels', default=False, when='@0.9.0: +kokkos ',
             description=("Use HPX execution space for CPU Kokkos kernels"
                          " (instead of the Serial space)"))
-    variant('monopole_host_tasks', default='1', when='@master +kokkos_hpx_kernels',
+    variant('monopole_host_tasks', default='1', when='@master ',
             description=("Tasks per monopole kernel invocation when using"
                          "the Kokkos HPX execution space"),
             values=('1', '4', '16'), multi=False)
-    variant('multipole_host_tasks', default='1', when='@master +kokkos_hpx_kernels',
+    variant('multipole_host_tasks', default='1', when='@master',
             description=("Tasks per multipole kernel invocation when using"
                          " the Kokkos HPX execution space"),
             values=('1', '4', '16', '64'), multi=False)
-    variant('hydro_host_tasks', default='1', when='@master +kokkos_hpx_kernels',
+    variant('hydro_host_tasks', default='1', when='@master',
             description=("Tasks per hydro kernel invocation when using the"
                          " Kokkos HPX execution space"), multi=False)
     variant('simd_library', default='KOKKOS', when='@master +kokkos',
@@ -88,7 +88,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx +sycl ", when="+sycl")
 
     # Pick hpx-kokkos version that fits octotigers variant:
-    depends_on('hpx-kokkos@master', when='@master+kokkos', patches=['version.patch'])
+    depends_on('hpx-kokkos@master', when='@master+kokkos')
     depends_on('hpx-kokkos@:0.2.0', when='@0.9.0+kokkos')
     # hpx-kokkos GPU variant
     depends_on("hpx-kokkos +sycl ", when="+sycl+kokkos")
