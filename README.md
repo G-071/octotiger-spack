@@ -3,6 +3,11 @@
 This repository contains the [Spack](https://github.com/spack/spack#-spack) package for the astrophysics code [Octo-Tiger](https://github.com/STEllAR-GROUP/octotiger). 
 Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and uncomfortable to use.
 
+### Package features:
+- Supports builds all CPU/GPU variants of Octotiger (Kokkos, CUDA, HIP, SYCL and the older Vc kernerls) and all available SIMD backends
+- Supports distributed builds (with the HPX networking backends tcp, mpi or lci)
+- Supports older versions of Octo-Tiger as well ([0.8.0 / Benchmark Version](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.8.0) and [0.9.0](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.9.0))
+
 ### List of added/modified packages:
 
 - Added Octo-Tiger package
@@ -11,7 +16,7 @@ Additionally, the repository also includes new/modified/updated spack packages o
 - Modified HPX package by adding a LCI parcelport variant to have an additional networking backend available
 - Modified HPX-Kokkos package by adding SYCL variant, adding variants for the future types and exposing the hpx-kokkos tests to spack
 - Modified Kokkos package by adding an use_unsupported_sycl_arch variant (which allows using the SYCL execution space on non-Intel GPU - which in turn allowed me to test octotiger with SYCL on my available hardware). Also includes a patch for the kokkos CMakeLists which allows using this on AMDGPUs (not just NVIDIA)
-- Added some patches for kokkos/kokkos-nvcc wrapper for NIXos usage
+- Added some patches for kokkos/kokkos-nvcc wrapper for NIXOs usage
 - Modified dpcpp package by using the package.py from the [this spack PR](https://github.com/spack/spack/pull/38981) that's updating (not merged as of yet) and by attempting to fix the library/linking issue in dependent packages
   
 Note: Additions and changes might eventually be submitted to the main spack repository! For now, this repo allows me to rapidly experiment with different builds on different machines until I get to the point where all Octo-Tiger features and relevant versions are working on the intended target platforms.
