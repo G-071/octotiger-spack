@@ -271,6 +271,8 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define_from_variant("HPX_WITH_GENERIC_CONTEXT_COROUTINES", "generic_coroutines"),
             self.define("BOOST_ROOT", spec["boost"].prefix),
             self.define("HWLOC_ROOT", spec["hwloc"].prefix),
+            self.define("HPX_WITH_PARCEL_COALESCING", False),
+            self.define("HPX_WITH_ZERO_COPY_SERIALIZATION_THRESHOLD", 8192),
             self.define("HPX_WITH_BOOST_ALL_DYNAMIC_LINK", True),
             self.define("BUILD_SHARED_LIBS", True),
             self.define("HPX_DATASTRUCTURES_WITH_ADAPT_STD_TUPLE", False),

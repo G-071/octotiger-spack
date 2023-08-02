@@ -17,18 +17,19 @@ class Cppuddle(CMakePackage):
 
     maintainers("G-071")
 
+    version("develop", branch="develop")
     version("master", branch="master", preferred=True)
     version("0.1.0", sha256="6d3be4b835f6c2bcbac940a09f953ec2aa31e16230c3c4605e3c6a0a64b19d13")
 
     variant("counters", default=False, description="Activate allocation counters")
-    variant("hpx_support", default=False, description="Build with HPX support", when="@master")
-    variant("max_worker_count", when="@master", default=128, values=lambda x: isinstance(x, str)
+    variant("hpx_support", default=False, description="Build with HPX support", when="@master:")
+    variant("max_worker_count", when="@master:", default=128, values=lambda x: isinstance(x, str)
             and x.isdigit(),  description="Maximum number of supported workers")
-    variant("gpu_count", when="@master", default=1, values=lambda x: isinstance(x, str)
+    variant("gpu_count", when="@master:", default=1, values=lambda x: isinstance(x, str)
             and x.isdigit(), description="Number of GPUs to be used")
-    variant("disable_recycling", when="@master", default=False,
+    variant("disable_recycling", when="@master:", default=False,
             description="Disable buffer recycling altogether")
-    variant("disable_aggressive_allocators", when="@master", default=False,
+    variant("disable_aggressive_allocators", when="@master:", default=False,
             description="Disable aggressive content reusage")
 
     depends_on("cmake@3.16:")

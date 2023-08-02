@@ -19,6 +19,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     maintainers("G-071")
 
+    version("develop", branch="develop", submodules=True)
     version("master", branch="master", submodules=True, preferred=True)
     version("0.9.0", sha256="7d44f24a40a2dfb234faba57774614fe6db5b35aea657e7152ec0a008da10629")
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
@@ -40,18 +41,18 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('kokkos_hpx_kernels', default=False, when='@0.9.0: +kokkos ',
             description=("Use HPX execution space for CPU Kokkos kernels"
                          " (instead of the Serial space)"))
-    variant('monopole_host_tasks', default='1', when='@master ',
+    variant('monopole_host_tasks', default='1', when='@master: ',
             description=("Tasks per monopole kernel invocation when using"
                          "the Kokkos HPX execution space"),
             values=('1', '4', '16'), multi=False)
-    variant('multipole_host_tasks', default='1', when='@master',
+    variant('multipole_host_tasks', default='1', when='@master:',
             description=("Tasks per multipole kernel invocation when using"
                          " the Kokkos HPX execution space"),
             values=('1', '4', '16', '64'), multi=False)
-    variant('hydro_host_tasks', default='1', when='@master',
+    variant('hydro_host_tasks', default='1', when='@master:',
             description=("Tasks per hydro kernel invocation when using the"
                          " Kokkos HPX execution space"), multi=False)
-    variant('simd_library', default='KOKKOS', when='@master +kokkos',
+    variant('simd_library', default='KOKKOS', when='@master: +kokkos',
             description=("Use either kokkos (for kokkos simd types) or std"
                          " (for std::experimental::simd types)"),
             values=('KOKKOS', 'STD'), multi=False)
@@ -80,7 +81,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@0.8.0')
     depends_on('hpx@1.6:1.7 cxxstd=17 ', when='@0.9.0')
-    depends_on('hpx@1.8.0: cxxstd=17 ', when='@master')
+    depends_on('hpx@1.8.0: cxxstd=17 ', when='@master:')
     # Pick HPX GPU variants depending on octotiger's GPU variants:
     depends_on('hpx +cuda +async_cuda ', when='+cuda')
     depends_on('hpx +rocm ', when='+rocm')
@@ -88,7 +89,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx +sycl ", when="+sycl")
 
     # Pick hpx-kokkos version that fits octotigers variant:
-    depends_on('hpx-kokkos@master', when='@master+kokkos')
+    depends_on('hpx-kokkos@master', when='@master:+kokkos')
     depends_on('hpx-kokkos@:0.2.0', when='@0.9.0+kokkos')
     # hpx-kokkos GPU variant
     depends_on("hpx-kokkos +sycl ", when="+sycl+kokkos")
@@ -98,7 +99,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                when='+kokkos -cuda')
 
     # Pick cppuddle version that fits octotigers variant:
-    depends_on('cppuddle@master +hpx_support', when='@master')
+    depends_on('cppuddle@master: +hpx_support', when='@master:')
     depends_on('cppuddle@0.1.0 ', when='@0.9.0')
 
     # Pick Kokkos Version depending on Octotiger version:
@@ -132,9 +133,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         depends_on('hpx-kokkos@master +rocm amdgpu_target={0}'.format(gfx),
                    when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
     # NVCC wrapper if needed (needs hpx patches):
-    depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
-               patches=['adapt-kokkos-wrapper-for-nix.patch',
-                        'adapt-kokkos-wrapper-for-hpx.patch'])
+    #depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
+    #           patches=['adapt-kokkos-wrapper-for-nix.patch',
+    #                    'adapt-kokkos-wrapper-for-hpx.patch'])
 
     # Known conflicts
 
@@ -167,6 +168,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             cuda_arch = cuda_arch_list[0]
             if cuda_arch != 'none':
                 args.append('-DOCTOTIGER_CUDA_ARCH=sm_{0}'.format(cuda_arch))
+                args.append('-DCMAKE_CUDA_ARCHITECTURES={0}'.format(cuda_arch))
+                
 
         # HIP config
         args.append(self.define_from_variant('OCTOTIGER_WITH_HIP', 'rocm'))
