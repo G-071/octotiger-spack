@@ -1,0 +1,181 @@
+diff --git a/libs/core/async_cuda/include/hpx/async_cuda/cuda_future.hpp b/libs/core/async_cuda/include/hpx/async_cuda/cuda_future.hpp
+index e5e617c471..f756acf77a 100644
+--- a/libs/core/async_cuda/include/hpx/async_cuda/cuda_future.hpp
++++ b/libs/core/async_cuda/include/hpx/async_cuda/cuda_future.hpp
+@@ -189,37 +189,39 @@ namespace hpx { namespace cuda { namespace experimental {
+         hpx::future<void> get_future(
+             Allocator const& a, cudaStream_t stream, int device)
+         {
+-            using shared_state = future_data<Allocator, Mode>;
+-
+-            using other_allocator = typename std::allocator_traits<
+-                Allocator>::template rebind_alloc<shared_state>;
+-            using traits = std::allocator_traits<other_allocator>;
+-
+-            using init_no_addref = typename shared_state::init_no_addref;
+-
+-            using unique_ptr = std::unique_ptr<shared_state,
+-                util::allocator_deleter<other_allocator>>;
+-
+-            other_allocator alloc(a);
+-            unique_ptr p(traits::allocate(alloc, 1),
+-                hpx::util::allocator_deleter<other_allocator>{alloc});
+-
+-            static_assert(std::is_same_v<Mode, event_mode> ||
+-                    std::is_same_v<Mode, callback_mode>,
+-                "get_future mode not supported!");
+-            if constexpr (std::is_same_v<Mode, event_mode>)
+-            {
+-                traits::construct(
+-                    alloc, p.get(), init_no_addref{}, alloc, stream, device);
+-            }
+-            else if constexpr (std::is_same_v<Mode, callback_mode>)
+-            {
+-                traits::construct(
+-                    alloc, p.get(), init_no_addref{}, alloc, stream);
+-            }
+-
+-            return hpx::traits::future_access<future<void>>::create(
+-                p.release(), false);
++            /* using shared_state = future_data<Allocator, Mode>; */
++
++            /* using other_allocator = typename std::allocator_traits< */
++            /*     Allocator>::template rebind_alloc<shared_state>; */
++            /* using traits = std::allocator_traits<other_allocator>; */
++
++            /* using init_no_addref = typename shared_state::init_no_addref; */
++
++            /* using unique_ptr = std::unique_ptr<shared_state, */
++            /*     util::allocator_deleter<other_allocator>>; */
++
++            /* other_allocator alloc(a); */
++            /* unique_ptr p(traits::allocate(alloc, 1), */
++            /*     hpx::util::allocator_deleter<other_allocator>{alloc}); */
++
++            /* static_assert(std::is_same_v<Mode, event_mode> || */
++            /*         std::is_same_v<Mode, callback_mode>, */
++            /*     "get_future mode not supported!"); */
++            /* if constexpr (std::is_same_v<Mode, event_mode>) */
++            /* { */
++            /*     traits::construct( */
++            /*         alloc, p.get(), init_no_addref{}, alloc, stream, device); */
++            /* } */
++            /* else if constexpr (std::is_same_v<Mode, callback_mode>) */
++            /* { */
++            /*     traits::construct( */
++            /*         alloc, p.get(), init_no_addref{}, alloc, stream); */
++            /* } */
++
++            /* return hpx::traits::future_access<future<void>>::create( */
++            /*     p.release(), false); */
++            check_cuda_error(cudaStreamSynchronize(stream));
++            return hpx::make_ready_future();
+         }
+ 
+         // -------------------------------------------------------------
+diff --git a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
+index 8cc3d9d9b1..0cb13f4957 100644
+--- a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
++++ b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
+@@ -96,26 +96,29 @@ namespace hpx { namespace sycl { namespace experimental {
+         hpx::future<void> get_future(
+             Allocator const& a, cl::sycl::event command_event)
+         {
+-            using shared_state = future_data<Allocator>;
++            /* using shared_state = future_data<Allocator>; */
+ 
+-            using other_allocator = typename std::allocator_traits<
+-                Allocator>::template rebind_alloc<shared_state>;
+-            using traits = std::allocator_traits<other_allocator>;
++            /* using other_allocator = typename std::allocator_traits< */
++            /*     Allocator>::template rebind_alloc<shared_state>; */
++            /* using traits = std::allocator_traits<other_allocator>; */
++
++            /* using init_no_addref = typename shared_state::init_no_addref; */
+ 
+-            using init_no_addref = typename shared_state::init_no_addref;
++            /* using unique_ptr = std::unique_ptr<shared_state, */
++            /*     util::allocator_deleter<other_allocator>>; */
+ 
+-            using unique_ptr = std::unique_ptr<shared_state,
+-                util::allocator_deleter<other_allocator>>;
++            /* other_allocator alloc(a); */
++            /* unique_ptr p(traits::allocate(alloc, 1), */
++            /*     hpx::util::allocator_deleter<other_allocator>{alloc}); */
+ 
+-            other_allocator alloc(a);
+-            unique_ptr p(traits::allocate(alloc, 1),
+-                hpx::util::allocator_deleter<other_allocator>{alloc});
++            /* traits::construct( */
++            /*     alloc, p.get(), init_no_addref{}, alloc, command_event); */
+ 
+-            traits::construct(
+-                alloc, p.get(), init_no_addref{}, alloc, command_event);
++            /* return hpx::traits::future_access<future<void>>::create( */
++            /*     p.release(), false); */
+ 
+-            return hpx::traits::future_access<future<void>>::create(
+-                p.release(), false);
++            command_event.wait();
++            return hpx::make_ready_future();
+         }
+         // -------------------------------------------------------------
+ #if !defined(__HIPSYCL__)
+@@ -125,33 +128,36 @@ namespace hpx { namespace sycl { namespace experimental {
+         hpx::future<void> get_future_using_host_task(Allocator const& a,
+             cl::sycl::event command_event, cl::sycl::queue& command_queue)
+         {
+-            using shared_state = future_data<Allocator>;
++            /* using shared_state = future_data<Allocator>; */
+ 
+-            using other_allocator = typename std::allocator_traits<
+-                Allocator>::template rebind_alloc<shared_state>;
+-            using traits = std::allocator_traits<other_allocator>;
++            /* using other_allocator = typename std::allocator_traits< */
++            /*     Allocator>::template rebind_alloc<shared_state>; */
++            /* using traits = std::allocator_traits<other_allocator>; */
+ 
+-            using init_no_addref = typename shared_state::init_no_addref;
++            /* using init_no_addref = typename shared_state::init_no_addref; */
+ 
+-            using unique_ptr = std::unique_ptr<shared_state,
+-                util::allocator_deleter<other_allocator>>;
++            /* using unique_ptr = std::unique_ptr<shared_state, */
++            /*     util::allocator_deleter<other_allocator>>; */
+ 
+-            return hpx::detail::try_catch_exception_ptr(
+-                [&]() {
+-                    other_allocator alloc(a);
+-                    unique_ptr p(traits::allocate(alloc, 1),
+-                        hpx::util::allocator_deleter<other_allocator>{alloc});
++            /* return hpx::detail::try_catch_exception_ptr( */
++            /*     [&]() { */
++            /*         other_allocator alloc(a); */
++            /*         unique_ptr p(traits::allocate(alloc, 1), */
++            /*             hpx::util::allocator_deleter<other_allocator>{alloc}); */
+ 
+-                    // Call host_task internally which may throw (I think...)
+-                    traits::construct(alloc, p.get(), init_no_addref{}, alloc,
+-                        command_event, command_queue);
++            /*         // Call host_task internally which may throw (I think...) */
++            /*         traits::construct(alloc, p.get(), init_no_addref{}, alloc, */
++            /*             command_event, command_queue); */
+ 
+-                    return hpx::traits::future_access<future<void>>::create(
+-                        p.release(), false);
+-                },
+-                [&](std::exception_ptr&& ep) {
+-                    return hpx::make_exceptional_future<void>(HPX_MOVE(ep));
+-                });
++            /*         return hpx::traits::future_access<future<void>>::create( */
++            /*             p.release(), false); */
++            /*     }, */
++            /*     [&](std::exception_ptr&& ep) { */
++            /*         return hpx::make_exceptional_future<void>(HPX_MOVE(ep)); */
++            /*     }); */
++
++            command_event.wait();
++            return hpx::make_ready_future();
+         }
+ #endif
+         // -------------------------------------------------------------
