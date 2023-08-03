@@ -232,7 +232,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     patch("git_external.patch", when="@1.3.0 instrumentation=apex")
     patch("mimalloc_no_version_requirement.patch", when="@:1.8.0 malloc=mimalloc")
 
-    patch("sycl_define_hpx_compute.patch", when="+sycl")
+    patch("sycl_define_hpx_compute.patch", when="@:1.9.1+sycl")
 
     def url_for_version(self, version):
         if version >= Version("1.9.0"):

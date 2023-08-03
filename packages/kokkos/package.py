@@ -26,6 +26,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master")
     version("develop", branch="develop")
+    version("4.1.00", sha256="cf725ea34ba766fdaf29c884cfe2daacfdc6dc2d6af84042d1c78d0f16866275")
     version("4.0.01", sha256="bb942de8afdd519fd6d5d3974706bfc22b6585a62dd565c12e53bdb82cd154f0")
     version("4.0.00", sha256="1829a423883d4b44223c7c3a53d3c51671145aad57d7d23e6a1a4bebf710dcf6")
     version("3.7.02", sha256="5024979f06bc8da2fb696252a66297f3e0e67098595a0cc7345312b3b4aa0f54")
@@ -65,6 +66,9 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     patch('adapt-kokkos-for-nix.patch')
     patch('adapt-kokkos-for-hpx.patch')
+    # Small patch to CMakeLists, allowing to run the SYCL execution space on AMD GPUs as well
+    # Upstreamed in https://github.com/kokkos/kokkos/pull/6321
+    patch('sycl_hip_arch.patch', when='@:4.1.00 +sycl')
 
     tpls_variants = {
         "hpx": [False, "Whether to enable the HPX library"],
@@ -186,8 +190,6 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),
         description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False
     )
-    # Small patch to CMakeLists, allowing to run the SYCL execution space on AMD GPUs as well
-    patch('sycl_hip_arch.patch', when='+sycl')
 
     devices_values = list(devices_variants.keys())
     for dev in devices_variants:

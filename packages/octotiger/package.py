@@ -25,10 +25,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
     
     patch("add_missing_headers_for_080.patch", when="@0.8.0")
-    patch('add_sycl_lib_to_tools.patch', when='+sycl')
 
     # All available variants:
-    variant('sycl', default=False, when="@master",
+    variant('sycl', default=False, when="@master:",
             description=("Build octotiger with SYCL (also allows Kokkos"
                          " kernels to run with SYCL)"))
     variant('kokkos', default=False, when="@0.9.0:",
