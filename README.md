@@ -4,7 +4,7 @@ This repository contains the [Spack](https://github.com/spack/spack#-spack) pack
 Additionally, the repository also includes new/modified/updated spack packages of software Octo-Tiger depends on. The repo is meant to replace the old collection of [Octo-Tiger buildscripts](https://github.com/STEllAR-GROUP/OctoTigerBuildChain) as these become increasingly unwieldy and uncomfortable to use.
 
 ### Package features:
-- Supports builds all CPU/GPU variants of Octotiger (Kokkos, CUDA, HIP, SYCL and the older Vc kernerls) and all available SIMD backends
+- Supports builds all CPU/GPU variants of Octotiger (Kokkos, CUDA, HIP, SYCL and the older Vc kernels) and all available SIMD backends
 - Supports distributed builds (with the HPX networking backends tcp, mpi or lci)
 - Supports older versions of Octo-Tiger as well ([0.8.0 / Benchmark Version](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.8.0) and [0.9.0](https://github.com/STEllAR-GROUP/octotiger/releases/tag/v0.9.0))
 
