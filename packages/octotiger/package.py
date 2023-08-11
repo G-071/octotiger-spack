@@ -104,7 +104,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Pick Kokkos Version depending on Octotiger version:
     depends_on("kokkos@:3.6.01 ", when="@0.9.0+kokkos")
     depends_on("kokkos@3.6.01: ", when="@master+kokkos")
-    depends_on("kokkos@4.1.00: +hpx +hpx_async_dispatch ",
+    depends_on("kokkos@4.1.00: +hpx ",
                when="+kokkos_hpx_kernels @master")
     depends_on("kokkos@:3.6.01 +hpx +hpx_async_dispatch ",
                when="+kokkos_hpx_kernels @0.9.0")
@@ -115,15 +115,12 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                when='+kokkos -cuda')
     for sm_ in CudaPackage.cuda_arch_values:
         # This loop propgates the chosem cuda_arch to kokkos.
-        # TODO find better way to ensure all dependencies use the same cuda_arch
         depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper cuda_arch={0}'.format(
             sm_), when='+kokkos +cuda cuda_arch={0} %gcc'.format(sm_))
         depends_on(kokkos_string + ' +cuda +cuda_lambda -wrapper cuda_arch={0}'.format(
             sm_), when='+kokkos +cuda cuda_arch={0} %clang'.format(sm_))
     for gfx in ROCmPackage.amdgpu_targets:
         # This loop propgates the chosem amdgpu_target to hpx, kokkos and hpx-kokkos.
-        # Without it we would need to add the same amdgpu_target via ^ to them manually.
-        # TODO find better way to ensure all dependencies use the same amdgpu_target
         depends_on(kokkos_string + ' +rocm amdgpu_target={0}'.format(gfx),
                    when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
         depends_on('hpx +rocm amdgpu_target={0}'.format(gfx),
@@ -131,10 +128,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                    when='+rocm amdgpu_target={0}'.format(gfx))
         depends_on('hpx-kokkos@master +rocm amdgpu_target={0}'.format(gfx),
                    when='+kokkos +rocm amdgpu_target={0}'.format(gfx))
-    # NVCC wrapper if needed (needs hpx patches):
-    #depends_on('spack.pkg.builtin.kokkos-nvcc-wrapper', when='+kokkos%gcc',
-    #           patches=['adapt-kokkos-wrapper-for-nix.patch',
-    #                    'adapt-kokkos-wrapper-for-hpx.patch'])
+
 
     # Known conflicts
 
@@ -177,7 +171,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if "+sycl ^dpcpp" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER",
                                  "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
-            #env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec.prefix, "lib"))
 
         # SIMD & CPU kernel config
         if spec.satisfies("@0.9.0"):
@@ -214,6 +207,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                 raise SpackError("hydro_host_tasks > 1 requires +kokkos_hpx_kernels")
         args.append(self.define('OCTOTIGER_WITH_VC', 'ON'))
         args.append(self.define('OCTOTIGER_WITH_LEGACY_VC', 'OFF'))
+        # Required for SVE SIMD on A64Fx
+        if spec.target == "a64fx":
+            args.append(self.define('OCTOTIGER_WITH_CXX20', 'ON'))
+
 
         # Tests
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
@@ -221,7 +218,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                                    or spec.satisfies("griddim=16")):
             raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
                              "Disable tests or change griddim!")
-        if spec.satisfies("%clang") or spec.satisfies("+rocm") or spec.satisfies("+sycl"):
+        if (spec.satisfies("%arm") or spec.satisfies("%clang") or spec.satisfies("+rocm") or
+            spec.satisfies("+sycl") or spec.target == "a64fx"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))
