@@ -19,8 +19,8 @@ class Cppuddle(CMakePackage):
     maintainers("G-071")
 
     version("develop", branch="develop")
-    version("master", branch="master", preferred=True)
-    version("0.3.0", sha256="5e9c10e0069dc5bfb48a52510868d7aadeb5b60da12ab9b2e777ffaafc8fd999")
+    version("master", branch="master")
+    version("0.3.0", sha256="5e9c10e0069dc5bfb48a52510868d7aadeb5b60da12ab9b2e777ffaafc8fd999", preferred=True)
     version("0.2.1", sha256="f230008a8edbd46c7436af51a03f2b98ccf3b89af0391b4321a50a778232c693")
     version("0.2.0", sha256="1e92f8d6372295696a98e75dd6af577bdbe1107486011a1359381a56e0ae8923")
     version("0.1.0", sha256="6d3be4b835f6c2bcbac940a09f953ec2aa31e16230c3c4605e3c6a0a64b19d13")

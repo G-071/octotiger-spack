@@ -21,7 +21,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=True)
     version("master", branch="master", submodules=True, preferred=True)
-    version("0.10.0", commit="c06fbef1f557b71a9654b5f38ff3d6297cf71ba0")
+    version("0.10.0", commit="c06fbef1f557b71a9654b5f38ff3d6297cf71ba0", submodules=True)
     version("0.9.0", sha256="7d44f24a40a2dfb234faba57774614fe6db5b35aea657e7152ec0a008da10629")
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
     
@@ -37,7 +37,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             multi=False)
     variant('theta_minimum', default='0.34', when="@0.8.0:",
             description='Octotiger minimal allowed theta value',
-            values=('0.34', '0.5', '0.16'), multi=False)
+            values=('0.5', '0.34', '0.26' , '0.16'), multi=False)
     variant('kokkos_hpx_kernels', default=False, when='@0.9.0: +kokkos ',
             description=("Use HPX execution space for CPU Kokkos kernels"
                          " (instead of the Serial space)"))
@@ -89,7 +89,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx +sycl ", when="+sycl")
 
     # Pick hpx-kokkos version that fits octotigers variant:
-    depends_on('hpx-kokkos@master', when='@0.10.0:+kokkos')
+    depends_on('hpx-kokkos@0.4.0:', when='@0.10.0:+kokkos')
     depends_on('hpx-kokkos@:0.2.0', when='@0.9.0+kokkos')
     # hpx-kokkos GPU variant
     depends_on("hpx-kokkos +sycl ", when="+sycl+kokkos")
@@ -114,12 +114,15 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +sycl ", when="+sycl+kokkos")
     depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',
                when='+kokkos -cuda')
+    depends_on(kokkos_string + ' +wrapper ', when='+kokkos +cuda %gcc')
     for sm_ in CudaPackage.cuda_arch_values:
         # This loop propgates the chosem cuda_arch to kokkos.
-        depends_on(kokkos_string + ' +cuda +cuda_lambda +wrapper cuda_arch={0}'.format(
-            sm_), when='+kokkos +cuda cuda_arch={0} %gcc'.format(sm_))
-        depends_on(kokkos_string + ' +cuda +cuda_lambda -wrapper cuda_arch={0}'.format(
-            sm_), when='+kokkos +cuda cuda_arch={0} %clang'.format(sm_))
+        depends_on(kokkos_string + ' +cuda +cuda_lambda cuda_arch={0}'.format(
+            sm_), when='+kokkos +cuda cuda_arch={0}'.format(sm_))
+        depends_on('hpx-kokkos +cuda cuda_arch={0}'.format(sm_),
+                when='+kokkos +cuda cuda_arch={0}'.format(sm_))
+        depends_on('hpx +cuda cuda_arch={0}'.format(sm_),
+                when='+cuda cuda_arch={0}'.format(sm_))
     for gfx in ROCmPackage.amdgpu_targets:
         # This loop propgates the chosem amdgpu_target to hpx, kokkos and hpx-kokkos.
         depends_on(kokkos_string + ' +rocm amdgpu_target={0}'.format(gfx),
