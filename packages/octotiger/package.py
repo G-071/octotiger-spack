@@ -21,7 +21,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=True)
     version("master", branch="master", submodules=True, preferred=True)
-    version("0.10.0", commit="c06fbef1f557b71a9654b5f38ff3d6297cf71ba0", submodules=True)
+    version("0.10.0", commit="9785615df4a53917a3ecd2754804f9c5d3c80fae", submodules=True)
     version("0.9.0", sha256="7d44f24a40a2dfb234faba57774614fe6db5b35aea657e7152ec0a008da10629")
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
     
