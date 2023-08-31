@@ -21,7 +21,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     version("develop", branch="develop", submodules=True)
     version("master", branch="master", submodules=True, preferred=True)
-    version("0.10.0", commit="9785615df4a53917a3ecd2754804f9c5d3c80fae", submodules=True)
+    version("0.10.0", sha256="1849c8e5505a2be16a55041f64e0241d9b832dabd14197cf5433ca77dbbb1f6c")
     version("0.9.0", sha256="7d44f24a40a2dfb234faba57774614fe6db5b35aea657e7152ec0a008da10629")
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
     
@@ -237,7 +237,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             args.append('-DOCTOTIGER_DISABLE_ILIST=ON')
         else:
             args.append('-DOCTOTIGER_DISABLE_ILIST=OFF')
-        args.append(self.define('OCTOTIGER_ARCH_FLAG', '-march=native   '))
+        args.append(self.define('OCTOTIGER_ARCH_FLAG', '-march=native '))
 
         # Misc
         args.append(self.define('OCTOTIGER_WITH_UNBUFFERED_STDOUT', 'OFF'))
