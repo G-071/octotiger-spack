@@ -14,8 +14,8 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     git = "https://github.com/STEllAR-GROUP/hpx-kokkos.git"
     maintainers("G-071", "msimberg")
 
-    version("master", git="https://github.com/STEllAR-GROUP/hpx-kokkos.git", branch="master")
-    version("0.4.0", branch="release-0.4.X", preferred=True)
+    version("master", branch="master")
+    version("0.4.0", sha256="dafef55521cf4bf7ab28ebad546ea1d3fb83fac3a9932e292db4ab3666cd833f")
     version("0.3.0", sha256="83c1d11dab95552ad0abdae767c71f757811d7b51d82bd231653dc942e89a45d")
     version("0.2.0", sha256="289b711cea26afe80be002fc521234c9194cd0e8f69863f3b08b654674dbe5d5")
     version("0.1.0", sha256="24edb817d0969f4aea1b68eab4984c2ea9a58f4760a9b8395e20f85b178f0850")
@@ -28,12 +28,14 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
         description="Use the specified C++ standard when building.",
     )
     variant("sycl", default=False, description="Build with SYCL support")
-    variant("cuda_future_type", default="event",
-            description="Integration type for CUDA/HIP futures",
-            values=("event", "callback"), multi=False)
-    variant("sycl_future_type", default="event", when="+sycl",
-            description="Integration type for SYCL futures",
-            values=("event", "host_task"), multi=False)
+
+    future_types_map = {"polling": "event", "callback": "callback", "host_task": "host_task"}
+    variant(
+        "future_type",
+        default="polling",
+        values=future_types_map.keys(),
+        description="Integration type for GPU futures",
+    )
 
     depends_on("cmake@3.19:", type="build")
 
@@ -68,18 +70,23 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +rocm", when="+rocm")
 
     conflicts("+sycl", when="@:0.3.0")
+    conflicts("future_type=callback", when="+sycl")
+    conflicts("future_type=host_task", when="~sycl")
     build_directory = "spack-build"
     
     def cmake_args(self):
         spec, args = self.spec, []
 
-        args.append(self.define_from_variant('HPX_KOKKOS_CUDA_FUTURE_TYPE',
-                                             'cuda_future_type'))
-        args.append(self.define_from_variant('HPX_KOKKOS_SYCL_FUTURE_TYPE',
-                                             'sycl_future_type'))
-
-        args.append(self.define('HPX_KOKKOS_ENABLE_TESTS', self.run_tests))
-        args.append(self.define('HPX_KOKKOS_ENABLE_BENCHMARKS', self.run_tests))
+        args += [
+            self.define("HPX_KOKKOS_ENABLE_TESTS", self.run_tests),
+            self.define("HPX_KOKKOS_ENABLE_BENCHMARKS", self.run_tests),
+        ]
+        if spec.satisfies("+sycl"):
+            args.append(self.define("HPX_KOKKOS_SYCL_FUTURE_TYPE",
+                self.future_types_map[spec.variants["future_type"].value]))
+        else:
+            args.append(self.define("HPX_KOKKOS_CUDA_FUTURE_TYPE",
+                self.future_types_map[spec.variants["future_type"].value]))
 
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
