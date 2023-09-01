@@ -10,8 +10,8 @@ from spack.package import *
 class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     """Octo-Tiger is an astrophysics program simulating the evolution of star
     systems based on the fast multipole method on adaptive Octrees. It was
-    implemented using high-level C++ libraries, specifically HPX and Vc, which
-    allows its use on different hardware platforms."""
+    implemented using high-level C++ libraries, specifically HPX and Kokkos,
+    which allows its scalability and usage on different hardware platforms."""
 
     homepage = "https://github.com/STEllAR-GROUP/octotiger"
     url = "https://github.com/STEllAR-GROUP/octotiger/archive/refs/tags/v0.8.0.zip"
