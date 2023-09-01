@@ -19,23 +19,44 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     maintainers("G-071")
 
+    # Development versions
     version("develop", branch="develop", submodules=True)
     version("master", branch="master", submodules=True, preferred=True)
+    # Official Github Releases
+    # -> 0.10.0 New kernel fusions, SIMD and SYCL features
     version("0.10.0", sha256="1849c8e5505a2be16a55041f64e0241d9b832dabd14197cf5433ca77dbbb1f6c")
+    # -> 0.9.0 Contains CUDA/HIP and Kokkos Implementation for Hydro and Gravity
     version("0.9.0", sha256="7d44f24a40a2dfb234faba57774614fe6db5b35aea657e7152ec0a008da10629")
+    # -> 0.8.0 Contains new hydro solver (CPU-only)
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
+
+    # Unofficial Releases - no offical github reelase but noteworthy snapshots before major changes
+    # -> 0.7.0 Before hydro rework (last tested with gcc@10)
+    version("0.7.0", commit="20c725969437454a1d931e6409187a84eea22b38", deprecated=True)
+    # -> 0.6.0 Before SoA datastructure conversion and before any CUDA work (last tested with gcc@10)
+    version("0.6.0", commit="afef65c6aa09785ff33b01ca8254b25a98f08faf", deprecated=True)
     
+    # Fix old missing headers bugs:
+    patch("add_missing_headers_for_060.patch", when="@0.6.0")
+    patch("add_missing_headers_for_070.patch", when="@0.7.0")
     patch("add_missing_headers_for_080.patch", when="@0.8.0")
+
+    patch("cast_workaround_for_070cuda.patch", when="@0.7.0+cuda")
+    patch("fpic_workaround_for_070cuda.patch", when="@0.7.0+cuda")
 
     # All available variants:
     variant('sycl', default=False, when="@0.10.0:",
             description=("Build octotiger with SYCL (also allows Kokkos"
                          " kernels to run with SYCL)"))
+    variant('cuda', default=False, when="@0.7.0:",
+            description=("Build octotiger with CUDA support"))
+    variant('rocm', default=False, when="@0.9.0:",
+            description=("Build octotiger with ROCm support"))
     variant('kokkos', default=False, when="@0.9.0:",
             description='Build octotiger with kokkos based kernels')
     variant('griddim', default='8', description='Octotiger grid size',
             multi=False)
-    variant('theta_minimum', default='0.34', when="@0.8.0:",
+    variant('theta_minimum', default='0.34', 
             description='Octotiger minimal allowed theta value',
             values=('0.5', '0.34', '0.26' , '0.16'), multi=False)
     variant('kokkos_hpx_kernels', default=False, when='@0.9.0: +kokkos ',
@@ -71,15 +92,14 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('vc@1.4.1')
     depends_on('boost@1.61.0: cxxstd=14', when="@0.8.0")
     depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0:")
-    depends_on('hdf5 +threadsafe +szip +hl ')
-    # depends_on('hdf5 -mpi +threadsafe  +szip +hl', when='-mpi')
+    depends_on('hdf5 +threadsafe +szip +hl -mpi ')
     depends_on('silo@4.10.2-bsd:4.11-bsd ')
     # depends_on('silo@4.10.2 -mpi ', when='-mpi')
     depends_on('cuda', when='+cuda')
     depends_on("dpcpp", when="+sycl")
 
     # Pick HPX version and cxxstd depending on octotiger version:
-    depends_on('hpx@:1.4.1 cxxstd=14 ', when='@0.8.0')
+    depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
     depends_on('hpx@1.6:1.7 cxxstd=17 ', when='@0.9.0')
     depends_on('hpx@1.8.0: cxxstd=17 ', when='@0.10.0:')
     # Pick HPX GPU variants depending on octotiger's GPU variants:
@@ -149,6 +169,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("simd_library=STD", when="%clang")
     conflicts("+cuda", when="+rocm",
               msg="CUDA and ROCm are not compatible in Octo-Tiger.")
+    conflicts("+cuda", when="@:0.6.0",
+              msg="Octo-Tiger version too old for CUDA.")
     conflicts("+rocm", when="-kokkos",
               msg="ROCm support requires building with Kokkos for the correct arch flags.")
 
@@ -166,7 +188,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             if cuda_arch != 'none':
                 args.append('-DOCTOTIGER_CUDA_ARCH=sm_{0}'.format(cuda_arch))
                 args.append('-DCMAKE_CUDA_ARCHITECTURES={0}'.format(cuda_arch))
-                
 
         # HIP config
         args.append(self.define_from_variant('OCTOTIGER_WITH_HIP', 'rocm'))

@@ -1,0 +1,48 @@
+diff --git a/octotiger/cuda_util/cuda_scheduler.hpp b/octotiger/cuda_util/cuda_scheduler.hpp
+index 0eb16534..37178a13 100644
+--- a/octotiger/cuda_util/cuda_scheduler.hpp
++++ b/octotiger/cuda_util/cuda_scheduler.hpp
+@@ -47,7 +47,7 @@ namespace octotiger { namespace fmm {
+         {
+             T* data;
+             util::cuda_helper::cuda_error(
+-                cudaMallocHost(static_cast<void**>(&data), n * sizeof(T)));
++                cudaMallocHost(reinterpret_cast<void**>(&data), n * sizeof(T)));
+             return data;
+         }
+         void deallocate(T* p, std::size_t n)
+diff --git a/src/monopole_interactions/cuda_p2p_interaction_interface.cpp b/src/monopole_interactions/cuda_p2p_interaction_interface.cpp
+index 202c99a8..2591d9dd 100644
+--- a/src/monopole_interactions/cuda_p2p_interaction_interface.cpp
++++ b/src/monopole_interactions/cuda_p2p_interaction_interface.cpp
+@@ -55,7 +55,7 @@ namespace octotiger { namespace fmm { namespace monopole_interactions {
+             //                 &theta, &dx};
+             void* args[] = {&(env.device_local_monopoles),
+                 &(env.device_blocked_monopoles), &theta, &dx};
+-            gpu_interface.execute(static_cast<void const*>(&cuda_p2p_interactions_kernel),
++            gpu_interface.execute(reinterpret_cast<void const*>(&cuda_p2p_interactions_kernel),
+                 grid_spec, threads_per_block, args, 0);
+             // void* sum_args[] = {&(env.device_blocked_monopoles)};
+             // dim3 const sum_spec(1);
+diff --git a/src/multipole_interactions/cuda_multipole_interaction_interface.cpp b/src/multipole_interactions/cuda_multipole_interaction_interface.cpp
+index c3810961..7a4bee91 100644
+--- a/src/multipole_interactions/cuda_multipole_interaction_interface.cpp
++++ b/src/multipole_interactions/cuda_multipole_interaction_interface.cpp
+@@ -74,7 +74,7 @@ namespace octotiger { namespace fmm { namespace multipole_interactions {
+                     &(env.device_potential_expansions),
+                     &(env.device_angular_corrections), &theta, &second_phase};
+                 gpu_interface.execute(
+-                    static_cast<void const*>(&cuda_multipole_interactions_kernel_rho),
++                    reinterpret_cast<void const*>(&cuda_multipole_interactions_kernel_rho),
+                     grid_spec, threads_per_block, args, 0);
+                 // second_phase = true;
+                 // gpu_interface.execute(&cuda_multipole_interactions_kernel_rho, grid_spec,
+@@ -91,7 +91,7 @@ namespace octotiger { namespace fmm { namespace multipole_interactions {
+                     &(env.device_local_expansions),
+                     &(env.device_potential_expansions), &theta, &second_phase};
+                 gpu_interface.execute(
+-                    static_cast<void const*>(&cuda_multipole_interactions_kernel_non_rho),
++                    reinterpret_cast<void const*>(&cuda_multipole_interactions_kernel_non_rho),
+                     grid_spec, threads_per_block, args, 0);
+                 // second_phase = true;
+                 // gpu_interface.execute(&cuda_multipole_interactions_kernel_non_rho, grid_spec,

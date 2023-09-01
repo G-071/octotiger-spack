@@ -1,0 +1,25 @@
+diff --git a/octotiger/common_kernel/multiindex.hpp b/octotiger/common_kernel/multiindex.hpp
+index ace533f7..d7791206 100644
+--- a/octotiger/common_kernel/multiindex.hpp
++++ b/octotiger/common_kernel/multiindex.hpp
+@@ -11,7 +11,7 @@
+ 
+ #include <cmath>
+ #include <cstddef>
+-//#include <iostream>
++#include <iostream>
+ #include <vector>
+ 
+ namespace octotiger {
+diff --git a/octotiger/radiation/cuda_kernel.hpp b/octotiger/radiation/cuda_kernel.hpp
+index 90f4bcb7..134e1072 100644
+--- a/octotiger/radiation/cuda_kernel.hpp
++++ b/octotiger/radiation/cuda_kernel.hpp
+@@ -12,6 +12,7 @@
+ 
+ #include <array>
+ #include <vector>
++#include <stdexcept>
+ 
+ namespace octotiger { namespace radiation {
+     template <integer er_i, integer fx_i, integer fy_i, integer fz_i>

@@ -1,0 +1,12 @@
+diff --git a/src/grid.hpp b/src/grid.hpp
+index 04205a7a..800e863c 100644
+--- a/src/grid.hpp
++++ b/src/grid.hpp
+@@ -27,6 +27,7 @@ class rad_grid;
+ #include <hpx/runtime/serialization/array.hpp>
+ #include <hpx/runtime/serialization/vector.hpp>
+ #include <hpx/traits/is_bitwise_serializable.hpp>
++#include <hpx/include/future.hpp>
+ 
+ #include <iostream>
+ #include <functional>

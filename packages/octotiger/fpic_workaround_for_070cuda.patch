@@ -1,0 +1,18 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 204ed0da..3d118e87 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -34,6 +34,13 @@ option(OCTOTIGER_WITH_TESTS "Enable tests" ON)
+ 
+ set(OCTOTIGER_WITH_GRIDDIM "8" CACHE STRING "Grid size")
+ 
++# add -fPIC option to avoid this error:
++# https://cmake.org/pipermail/cmake/2015-January/059513.html
++# in case of relocatable device code
++# (modifying CMAKE_CUDA_(CXX_)_FLAGS did not help,
++# so we keep this flag at the cost of duplicating it for host code)
++set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
++
+ ################################################################################
+ # Find required packages
+ ################################################################################
