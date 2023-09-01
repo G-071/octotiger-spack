@@ -159,7 +159,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Known conflicts
 
     # See issue https://github.com/STEllAR-GROUP/hpx/issues/5799
-    conflicts("+kokkos ^kokkos@4.1.0: +cuda +hpx", when="%gcc",
+    conflicts("+kokkos ^kokkos@4.1.00: +cuda +hpx", when="%gcc",
               msg=("Using hpx sender/receiver backend (kokkos@4.1.0:) with nvcc does not work."
                    "Use clang or downgrade Kokkos, or deactivate +hpx"))
     conflicts("%gcc@12", when="@0.8.0",
@@ -195,6 +195,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append(self.define_from_variant('OCTOTIGER_WITH_HIP', 'rocm'))
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
+        # SYCL config
         if "+sycl ^dpcpp" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER",
                                  "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
@@ -225,7 +226,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             'OCTOTIGER_WITH_KOKKOS_MONOPOLE_TASKS', 'monopole_host_tasks'))
         args.append(self.define_from_variant(
             'OCTOTIGER_WITH_KOKKOS_HYDRO_TASKS', 'hydro_host_tasks'))
-        if ("~kokkos_hpx_kernels" in spec or "-kokkos_hpx_kernels" in spec) and "@0.10.0" in spec:
+        if (("~kokkos_hpx_kernels" in spec or "-kokkos_hpx_kernels" in spec) and
+            spec.satisfies("@0.10.0:")):
             if int(spec.variants["multipole_host_tasks"].value) > 1:
                 raise SpackError("multipole_host_tasks > 1 requires +kokkos_hpx_kernels")
             if int(spec.variants["monopole_host_tasks"].value) > 1:

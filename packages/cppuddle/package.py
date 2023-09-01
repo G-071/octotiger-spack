@@ -32,9 +32,9 @@ class Cppuddle(CMakePackage):
             description="Enable aggressive content recycling")
     variant("hpx", default=True, description="Build with HPX support", when="@0.1.0:")
     variant("number_buffer_buckets", when="@0.3.0: +hpx", default=128, values=lambda x: isinstance(x, str)
-            and x.isdigit(),  description="Maximum number of supported workers")
+            and x.isdigit(),  description="Maximum number of internal buckets")
     variant("max_number_gpus", when="@0.3.0:", default=1, values=lambda x: isinstance(x, str)
-            and x.isdigit(), description="Number of GPUs to be used")
+            and x.isdigit(), description="Maximum number of GPUs allowed")
     variant("enable_gpu_tests", when="@0.1.0:", default=False, 
             description="Build GPU tests as well")
 
