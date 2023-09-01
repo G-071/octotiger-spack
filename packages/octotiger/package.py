@@ -29,20 +29,22 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     version("0.9.0", sha256="7d44f24a40a2dfb234faba57774614fe6db5b35aea657e7152ec0a008da10629")
     # -> 0.8.0 Contains new hydro solver (CPU-only)
     version("0.8.0", sha256="02a19f0f86e9a379f2615e70cb031f6527e80ca13177a3b9e5e945722d15896e")
-
-    # Unofficial Releases - no offical github reelase but noteworthy snapshots before major changes
-    # -> 0.7.0 Before hydro rework (last tested with gcc@10)
-    version("0.7.0", commit="20c725969437454a1d931e6409187a84eea22b38", deprecated=True)
+    # Unofficial Releases - no offical github reelase but noteworthy tags/snapshots before major changes
+    # -> 0.7.0 Before hydro refactoring (last tested with gcc@10)
+    version("0.7.0", sha256="067add5fc747e2a695502ca33d82a654e5625d5bf1a0942183124e2d7ad269e1")
     # -> 0.6.0 Before SoA datastructure conversion and before any CUDA work (last tested with gcc@10)
-    version("0.6.0", commit="afef65c6aa09785ff33b01ca8254b25a98f08faf", deprecated=True)
+    version("0.6.0", sha256="14d97a0180a0e4b3b09e16526c7e22d0682335e3430ae0309f079875b15eefd2")
     
-    # Fix old missing headers bugs:
+
+   # Patch minor issues depending on what version/variants we are using
+   # Note that all patches/fixes have been upstreamed and are only required for the old versions
     patch("add_missing_headers_for_060.patch", when="@0.6.0")
     patch("add_missing_headers_for_070.patch", when="@0.7.0")
-    patch("add_missing_headers_for_080.patch", when="@0.8.0")
-
     patch("cast_workaround_for_070cuda.patch", when="@0.7.0+cuda")
     patch("fpic_workaround_for_070cuda.patch", when="@0.7.0+cuda")
+    patch("add_missing_headers_for_080.patch", when="@0.8.0")
+    patch("fix_sycl_for_0100.patch", when="@0.10.0+sycl")
+
 
     # All available variants:
     variant('sycl', default=False, when="@0.10.0:",
