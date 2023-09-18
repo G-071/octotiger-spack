@@ -84,7 +84,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                          "(discover) appropriate one"),
             values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'),
             multi=False)
-    variant('fast_fp_contract', default=True, when='@0.9.0:',
+    variant('fast_fp_contract', default=False, when='@0.9.0:',
             description=("Enable aggressive fp-contract=fast for CPU- and fmad for GPU kernels. "
                          "Required to be False for hybrid CPU+GPU runs (same compute kernel is "
                          "run both on CPU and GPU)"))
