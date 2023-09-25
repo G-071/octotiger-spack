@@ -116,7 +116,32 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     # Other dependecies
     depends_on("hwloc")
-    depends_on(Boost.with_default_variants)
+    boost_with_default_variants = "boost" + "".join(
+        [
+            "+atomic",
+            "+chrono",
+            "+date_time",
+            "+exception",
+            "+filesystem",
+            "+graph",
+            "+iostreams",
+            "+locale",
+            "+log",
+            "+math",
+            "+program_options",
+            "+random",
+            "+regex",
+            "+serialization",
+            "+signals",
+            "+system",
+            "+test",
+            "+thread",
+            "+timer",
+            "+wave",
+        ]
+    )
+
+    depends_on(boost_with_default_variants)
     depends_on("boost +context", when="+generic_coroutines")
     for cxxstd in cxxstds:
         depends_on("boost cxxstd={0}".format(map_cxxstd(cxxstd)), when="cxxstd={0}".format(cxxstd))
