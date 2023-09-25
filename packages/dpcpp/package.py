@@ -26,7 +26,7 @@ class Dpcpp(CMakePackage):
     version("2021.12", commit="27f59d8906fcc8aece7ff6aa570ccdee52168c2d")
 
 
-    requires("%gcc", msg="DPC++ builds only with GCC")
+    #requires("%gcc", msg="DPC++ builds only with GCC")
 
     variant("cuda", default=False, description="switch from OpenCL to CUDA")
     variant("hip", default=False, description="switch from OpenCL to HIP")
