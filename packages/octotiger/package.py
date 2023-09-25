@@ -17,7 +17,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     url = "https://github.com/STEllAR-GROUP/octotiger/archive/refs/tags/v0.8.0.zip"
     git = "https://github.com/STEllAR-GROUP/octotiger"
 
-    maintainers("G-071")
 
     # Development versions
     version("develop", branch="develop", submodules=True)

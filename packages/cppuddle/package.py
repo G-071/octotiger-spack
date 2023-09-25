@@ -16,7 +16,6 @@ class Cppuddle(CMakePackage):
     url = "https://github.com/SC-SGS/CPPuddle/archive/refs/tags/v0.1.0.zip"
     git = "https://github.com/SC-SGS/CPPuddle"
 
-    maintainers("G-071")
 
     version("develop", branch="develop")
     version("master", branch="master")

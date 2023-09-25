@@ -17,7 +17,6 @@ class KokkosNvccWrapper(Package):
     git = "https://github.com/kokkos/kokkos.git"
     url = "https://github.com/kokkos/kokkos/archive/3.1.01.tar.gz"
 
-    maintainers("Rombur")
 
     version("4.0.01", sha256="bb942de8afdd519fd6d5d3974706bfc22b6585a62dd565c12e53bdb82cd154f0")
     version("4.0.00", sha256="1829a423883d4b44223c7c3a53d3c51671145aad57d7d23e6a1a4bebf710dcf6")
