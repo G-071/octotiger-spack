@@ -27,7 +27,9 @@ class Cppuddle(CMakePackage):
 
     variant("allocator_counters", when="@0.1.0:", default=False, description="Activate allocation counters")
     variant("buffer_recycling", when="@0.2.1:", default=True,
-            description="Enable buffer recycling [+recommended]")
+            description="Enable buffer recycling ")
+    variant("executor_recycling", when="@0.3.1:", default=True,
+            description="Enable executor recycling ")
     variant("buffer_content_recycling", when="@0.2.1:", default=True,
             description="Enable aggressive content recycling")
     variant("hpx", default=True, description="Build with HPX support", when="@0.1.0:")
@@ -43,10 +45,10 @@ class Cppuddle(CMakePackage):
     depends_on("hpx@1.7.1:", when="+hpx @0.2.0:")
 
     # Tests need more dependencies...
-    depends_on("boost +program_options", type=("test"))
-    depends_on("kokkos@4.0.01 +cuda", type=("test"), when="+enable_gpu_tests")
-    depends_on("hpx-kokkos@master +cuda", type=("test"), when="+enable_gpu_tests")
-    depends_on("cuda", type=("test"), when="+enable_gpu_tests")
+    depends_on("boost +program_options")
+    depends_on("kokkos@4.0.01 +cuda", when="+enable_gpu_tests")
+    depends_on("hpx-kokkos@master +cuda", when="+enable_gpu_tests")
+    depends_on("cuda", when="+enable_gpu_tests")
 
     conflicts("+enable_gpu_tests", when="~hpx")
 
@@ -67,6 +69,7 @@ class Cppuddle(CMakePackage):
                 self.define_from_variant("CPPUDDLE_WITH_BUFFER_RECYCLING", "buffer_recycling"),
                 self.define_from_variant("CPPUDDLE_WITH_AGGRESSIVE_CONTENT_RECYCLING",
                                          "buffer_content_recycling"),
+                self.define_from_variant("CPPUDDLE_WITH_EXECUTOR_RECYCLING", "executor_recycling"),
                 ]
                 #self.define_from_variant("CPPUDDLE_WITH_HPX_MUTEX", "hpx"),
         if self.run_tests and spec.satisfies("~allocator_counters"):
@@ -88,4 +91,4 @@ class Cppuddle(CMakePackage):
     def check(self):
         if self.run_tests:
             with working_dir(self.build_directory):
-                ctest("--output-on-failure ")
+                ctest("--output-on-failure")

@@ -36,8 +36,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     version("0.6.0", sha256="14d97a0180a0e4b3b09e16526c7e22d0682335e3430ae0309f079875b15eefd2")
     
 
-   # Patch minor issues depending on what version/variants we are using
-   # Note that all patches/fixes have been upstreamed and are only required for the old versions
+    # Patch minor issues depending on what version/variants we are using
+    # Note that all patches/fixes have been upstreamed and are only required for the old versions
     patch("add_missing_headers_for_060.patch", when="@0.6.0")
     patch("add_missing_headers_for_070.patch", when="@0.7.0")
     patch("cast_workaround_for_070cuda.patch", when="@0.7.0+cuda")
@@ -276,7 +276,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             # (No parallel tests allowed as HPX needs all cores for
             # each test)
             with working_dir(self.build_directory):
-                ctest("--output-on-failure ")
+                ctest("--output-on-failure")
 
     # Not required due to adding setup_dependent environment in the dpcpp package
     # def setup_run_environment(self, env):
