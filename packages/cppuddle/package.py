@@ -20,16 +20,17 @@ class Cppuddle(CMakePackage):
 
     version("develop", branch="develop")
     version("master", branch="master")
-    version("0.3.0", sha256="5e9c10e0069dc5bfb48a52510868d7aadeb5b60da12ab9b2e777ffaafc8fd999", preferred=True)
+    version("0.3.1", sha256="dd9522e33f1f64c17727064383a5ce07fd3e90262b223cf5a33220abe201c2bb", preferred=True)
+    version("0.3.0", sha256="5e9c10e0069dc5bfb48a52510868d7aadeb5b60da12ab9b2e777ffaafc8fd999")
     version("0.2.1", sha256="f230008a8edbd46c7436af51a03f2b98ccf3b89af0391b4321a50a778232c693")
     version("0.2.0", sha256="1e92f8d6372295696a98e75dd6af577bdbe1107486011a1359381a56e0ae8923")
     version("0.1.0", sha256="6d3be4b835f6c2bcbac940a09f953ec2aa31e16230c3c4605e3c6a0a64b19d13")
 
     variant("allocator_counters", when="@0.1.0:", default=False, description="Activate allocation counters")
     variant("buffer_recycling", when="@0.2.1:", default=True,
-            description="Enable buffer recycling ")
+            description="Enable buffer recycling")
     variant("executor_recycling", when="@0.3.1:", default=True,
-            description="Enable executor recycling ")
+            description="Enable executor recycling")
     variant("buffer_content_recycling", when="@0.2.1:", default=True,
             description="Enable aggressive content recycling")
     variant("hpx", default=True, description="Build with HPX support", when="@0.1.0:")
