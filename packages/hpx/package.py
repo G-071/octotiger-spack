@@ -6,6 +6,8 @@
 
 import sys
 
+import llnl.util.tty as tty
+
 from spack.package import *
 from spack.pkg.builtin.boost import Boost
 
@@ -106,10 +108,10 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     variant("examples", default=False, description="Build examples")
     variant("async_mpi", default=False, description="Enable MPI Futures.")
     variant("async_cuda", default=False, description="Enable CUDA Futures.")
-    variant("disable_async_gpu_futures", default=False, when="@1.9.1:",
-            description=("GPU futures become synchronous. Enabling this option significantly "
-                         "decreases performance - this only intended for performance experiments!!"))
-    patch("disable_async_gpu_futures.patch", when="@1.9.1: +disable_async_gpu_futures")
+    variant("async_gpu_futures", default=True, when="@1.9.1:",
+            description=("GPU futures become synchronous. Disabling this option significantly "
+                         "decreases GPU performance - this only intended for performance experiments!!"))
+    patch("disable_async_gpu_futures.patch", when="@1.9.1: ~async_gpu_futures")
 
     # Build dependencies
     depends_on("python", type=("build", "test", "run"))
@@ -316,6 +318,12 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
                 raise SpackError("Unrecognized sycl_target_arch: {0}".format(sycl_target))
             # Pass required target flags to HPX (will be appended when compiling SYCL src files)
             args += [self.define("HPX_WITH_SYCL_FLAGS", sycl_target_flags)]
+
+        if spec.satisfies("~async_gpu_futures"):
+            tty.warn("Building HPX with disabled asynchronous CUDA/HIP futures. This "
+                     "can lead to degraded performance and should "
+                     "only be done for certain benchmarks!")
+
 
         # Instrumentation
         args += self.instrumentation_args()

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import llnl.util.tty as tty
 from spack.error import SpackError
 from spack.package import *
 
@@ -82,6 +83,10 @@ class Cppuddle(CMakePackage):
         if spec.satisfies("~buffer_content_recycling"):
             tty.warn("Building cppuddle with disabled buffer content recycling. This "
                      "can lead to sligtly degraded performance!")
+        if spec.satisfies("~executor_recycling"):
+            tty.warn("Building cppuddle with disabled executor recycling. This "
+                     "can lead to substantially degraded performance and should "
+                     "only be done for certain benchmarks!")
         if spec.satisfies("^hpx +rocm"):
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
         if spec.satisfies("^hpx +sycl"):
