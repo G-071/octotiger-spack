@@ -27,6 +27,7 @@ class Cppuddle(CMakePackage):
     version("0.2.0", sha256="1e92f8d6372295696a98e75dd6af577bdbe1107486011a1359381a56e0ae8923")
     version("0.1.0", sha256="6d3be4b835f6c2bcbac940a09f953ec2aa31e16230c3c4605e3c6a0a64b19d13")
 
+
     variant("allocator_counters", when="@0.1.0:", default=False, description="Activate allocation counters")
     variant("buffer_recycling", when="@0.2.1:", default=True,
             description="Enable buffer recycling")
@@ -41,6 +42,9 @@ class Cppuddle(CMakePackage):
             and x.isdigit(), description="Maximum number of GPUs allowed")
     variant("enable_gpu_tests", when="@0.1.0:", default=False, 
             description="Build GPU tests as well")
+
+    # Workarounds
+    patch("fix_stream_interface_type.patch", when="@0.3.1~executor_recycling") # upstreamed in master
 
     depends_on("cmake@3.16:")
     depends_on("hpx@:1.7.1", when="+hpx @0.1.0")
