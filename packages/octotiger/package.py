@@ -65,8 +65,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             description=("Use HPX execution space for CPU Kokkos kernels"
                          " (instead of the Serial space)"))
     variant('monopole_host_tasks', default='1', when='@0.10.0:', 
-            description=("Tasks per monopole kernel invocation when using"
-                         "the Kokkos HPX execution space"),
+            description=("Tasks per monopole kernel invocation when using u"
+                         " the Kokkos HPX execution space"),
             values=('1', '4', '16'), multi=False)
     variant('multipole_host_tasks', default='1', when='@0.10.0:', 
             description=("Tasks per multipole kernel invocation when using"
@@ -85,9 +85,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'),
             multi=False)
     variant('fast_fp_contract', default=False, when='@0.9.0:',
-            description=("Enable aggressive fp-contract=fast for CPU- and fmad for GPU kernels. "
-                         "Required to be False for hybrid CPU+GPU runs (same compute kernel is "
-                         "run both on CPU and GPU)"))
+            description=("Enable aggressive fp-contract=fast and fmad for kernels. "
+                         "Required to be False for hybrid CPU+GPU runs "))
 
     # Misc dependencies:
     depends_on('cmake@3.16.0:', type='build')
@@ -247,8 +246,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                                    or spec.satisfies("griddim=16")):
             raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
                              "Disable tests or change griddim!")
-        if (spec.satisfies("%arm") or spec.satisfies("%clang") or spec.satisfies("+rocm") or
-            spec.satisfies("+sycl") or spec.target == "a64fx"):
+        if not self.run_tests or (spec.satisfies("%arm") or spec.satisfies("%clang") or
+           spec.satisfies("+rocm") or spec.satisfies("+sycl") or spec.target == "a64fx"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))

@@ -65,10 +65,10 @@ class Cppuddle(CMakePackage):
         args += [
                 self.define_from_variant("CPPUDDLE_WITH_COUNTERS", "allocator_counters"),
                 self.define("CPPUDDLE_WITH_TESTS", self.run_tests),
-                self.define("CPPUDDLE_WITH_HPX_MUTEX", False),
                 self.define_from_variant("CPPUDDLE_WITH_CUDA", "enable_gpu_tests"),
                 self.define_from_variant("CPPUDDLE_WITH_KOKKOS", "enable_gpu_tests"),
                 self.define_from_variant("CPPUDDLE_WITH_HPX", "hpx"),
+                self.define_from_variant("CPPUDDLE_WITH_HPX_MUTEX", "hpx"),
                 self.define_from_variant("CPPUDDLE_WITH_HPX_AWARE_ALLOCATORS", "hpx"),
                 self.define_from_variant("CPPUDDLE_WITH_NUMBER_BUCKETS", "number_buffer_buckets"),
                 self.define_from_variant("CPPUDDLE_WITH_MAX_NUMBER_GPUS", "max_number_gpus"),
