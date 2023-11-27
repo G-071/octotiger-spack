@@ -79,7 +79,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             description=("Use either kokkos (for kokkos simd types) or std"
                          " (for std::experimental::simd types)"),
             values=('KOKKOS', 'STD'), multi=False)
-    variant('simd_extension', default='DISCOVER', when='@0.9.0: +kokkos',
+    variant('simd_extension', default='DISCOVER', when='@0.9.0:',
             description=("Enforce specific SIMD extension or autoselect "
                          "(discover) appropriate one"),
             values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'),

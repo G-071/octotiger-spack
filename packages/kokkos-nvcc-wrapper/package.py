@@ -41,6 +41,8 @@ class KokkosNvccWrapper(Package):
 
     depends_on("cuda")
 
+    patch("adapt-kokkos-for-nix.patch")
+
     def install(self, spec, prefix):
         src = os.path.join("bin", "nvcc_wrapper")
         mkdir(prefix.bin)
