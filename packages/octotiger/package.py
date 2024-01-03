@@ -87,6 +87,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('fast_fp_contract', default=False, when='@0.9.0:',
             description=("Enable aggressive fp-contract=fast and fmad for kernels. "
                          "Required to be False for hybrid CPU+GPU runs "))
+    variant('boost_multiprecision', default=False,
+            description=("Use Boost.Multiprecision Instead of GCC "
+                         "Quad-Precision Math Library"))
 
     # Misc dependencies:
     depends_on('cmake@3.16.0:', type='build')
@@ -266,6 +269,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         # Misc
         args.append(self.define('OCTOTIGER_WITH_UNBUFFERED_STDOUT', 'OFF'))
         args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDS', 'ON'))
+        args.append(self.define_from_variant(
+            'OCTOTIGER_WITH_BOOST_MULTIPRECISION', 'boost_multiprecision'))
 
         return args
 
