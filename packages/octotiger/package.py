@@ -90,6 +90,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('boost_multiprecision', default=False,
             description=("Use Boost.Multiprecision Instead of GCC "
                          "Quad-Precision Math Library"))
+    variant('cxx20', default=False,
+            description=("Compile Octo-Tiger with c++20"))
 
     # Misc dependencies:
     depends_on('cmake@3.16.0:', type='build')
@@ -171,6 +173,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
+    conflicts("simd_extension=SVE simd_library=STD", when="~cxx20")
     conflicts("+cuda", when="+rocm",
               msg="CUDA and ROCm are not compatible in Octo-Tiger.")
     conflicts("+cuda", when="@:0.6.0",
@@ -271,6 +274,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDS', 'ON'))
         args.append(self.define_from_variant(
             'OCTOTIGER_WITH_BOOST_MULTIPRECISION', 'boost_multiprecision'))
+        args.append(self.define_from_variant(
+            'OCTOTIGER_WITH_CXX20', 'cxx20'))
 
         return args
 
