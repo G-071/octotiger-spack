@@ -93,14 +93,18 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     variant('boost_multiprecision', default=False, description=("Use "
             "Boost.Multiprecision instead of GCC Quad-Precision Math Library "
             "(disable tests to forego quadmath entirely)"))
-    variant('cxxstd', default='17', values=('17', '20'),
-            description=("Compile Octo-Tiger with this C++ Standard"))
+    # 0.9.0 already require 17 but does not support 20
+    # 0.8.0 and older require 14 and do not support anything newer
+    variant('cxxstd', default='17', values=('17', '20'), when="@0.10.0:",
+            description=("Compile Octo-Tiger with this C++ Standard."))
 
     # Misc dependencies:
     depends_on('cmake@3.16.0:', type='build')
     depends_on('vc@1.4.1')
     depends_on('boost@1.61.0: cxxstd=14', when="@0.8.0")
-    depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0:")
+    depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0")
+    depends_on('boost@1.74.0: cxxstd=17', when="@0.10.0: cxxstd=17")
+    depends_on('boost@1.77.0: cxxstd=2a', when="@0.10.0: cxxstd=20")
     depends_on('hdf5 +threadsafe +szip +hl -mpi ')
     depends_on('silo@4.10.2-bsd:4.11-bsd ')
     # depends_on('silo@4.10.2 -mpi ', when='-mpi')
@@ -110,7 +114,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
     depends_on('hpx@1.6:1.7 cxxstd=17 ', when='@0.9.0')
-    depends_on('hpx@1.8.0: cxxstd=17 ', when='@0.10.0:')
+    depends_on('hpx@1.8.0: cxxstd=17 ', when='@0.10.0: cxxstd=17')
+    depends_on('hpx@1.8.0: cxxstd=20 ', when='@0.10.0: cxxstd=20')
     # Pick HPX GPU variants depending on octotiger's GPU variants:
     depends_on('hpx +cuda +async_cuda ', when='+cuda')
     depends_on('hpx +rocm ', when='+rocm')
@@ -141,6 +146,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Pick Kokkos execution spaces and GPU targets depending on the octotiger targets:
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
     depends_on("kokkos +sycl ", when="+sycl+kokkos")
+    depends_on("kokkos std=20 ", when="+kokkos cxxstd=20")
     depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',
                when='+kokkos -cuda')
     depends_on(kokkos_string + ' +wrapper ', when='+kokkos +cuda %gcc')
