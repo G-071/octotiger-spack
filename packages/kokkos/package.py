@@ -186,7 +186,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     # Note: do not use for production runs (use the CUDA execution space instead)
     variant(
         "use_unsupported_sycl_arch",
-        default="none",
+        default="none", when="+sycl",
         values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),
         description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False
     )
@@ -331,8 +331,6 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
                                            "{0}").format(use_unsupported_sycl_arch))
                 else:
                     raise SpackError("Unrecognized target: {0}".format(use_unsupported_sycl_arch))
-        elif not spec.satisfies("use_unsupported_sycl_arch=none"):
-            raise SpackError("use_unsupported_sycl_arch != none requires +sycl")
 
         kokkos_microarch_name = self.get_microarch(spec.target)
         if kokkos_microarch_name:
