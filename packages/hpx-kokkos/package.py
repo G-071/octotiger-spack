@@ -51,17 +51,18 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx@1.6", when="@0.1")
     depends_on("kokkos@3.2:3.5", when="@0.1")
 
-    depends_on("dpcpp", when="+sycl")
+    #depends_on("dpcpp", when="+sycl")
+    #depends_on("intel-oneapi-compilers", when="+sycl")
 
     for cxxstd in cxxstds:
         depends_on("hpx cxxstd={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
-        depends_on("kokkos std={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
+        depends_on("kokkos cxxstd={0}".format(cxxstd), when="cxxstd={0}".format(cxxstd))
 
     # HPXKokkos explicitly supports CUDA, ROCm and SYCL. Other GPU backends can be
     # used but without support in HPXKokkos. Other CPU backends, except Serial,
     # can't be used together with the HPX backend.
     depends_on("hpx +cuda", when="+cuda")
-    depends_on("kokkos +cuda +cuda_lambda +cuda_constexpr", when="+cuda")
+    #depends_on("kokkos +cuda +cuda_lambda +cuda_constexpr", when="+cuda")
 
     depends_on("hpx@1.9.0: +sycl", when="+sycl")
     depends_on("kokkos@3.7.0: +sycl", when="+sycl")
@@ -90,9 +91,9 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
 
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
-        if "+sycl ^dpcpp" in self.spec:
-            args += [self.define("CMAKE_CXX_COMPILER",
-                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        #if "+sycl ^dpcpp" in self.spec:
+        #    args += [self.define("CMAKE_CXX_COMPILER",
+        #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
             
         return args
 
