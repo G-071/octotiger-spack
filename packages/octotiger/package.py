@@ -205,7 +205,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         #if "+sycl ^dpcpp" in self.spec:
         #    args += [self.define("CMAKE_CXX_COMPILER",
         #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
-        if spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1") or spec.satisfies("%dpcpp")):
+        if spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
             raise SpackError(("+sycl requires compilation with either the oneapi or the dpcpp compiler!"))
 
         # SIMD & CPU kernel config
