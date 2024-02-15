@@ -186,7 +186,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     # Note: do not use for production runs (use the CUDA execution space instead)
     variant(
         "use_unsupported_sycl_arch",
-        default="none", when="+sycl",
+        default="none",
         values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),
         description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False
     )
