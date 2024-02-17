@@ -331,8 +331,6 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
                                            "{0}").format(use_unsupported_sycl_arch))
                 else:
                     raise SpackError("Unrecognized target: {0}".format(use_unsupported_sycl_arch))
-        elif not spec.satisfies("use_unsupported_sycl_arch=none"):
-            raise SpackError("use_unsupported_sycl_arch != none requires +sycl")
 
         kokkos_microarch_name = self.get_microarch(spec.target)
         if kokkos_microarch_name:
