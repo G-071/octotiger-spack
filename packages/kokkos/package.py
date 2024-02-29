@@ -191,6 +191,16 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         values=("none",) + intel_gpu_arches,
         description="Intel GPU architecture",
     )
+    # This allows running the SYCL execution space on NVIDIA GPUs                                                                                                                                                                                                                            
+    # which is handy for testing the SYCL implementation when there is no Intel GPU available.
+    # Note: do not use for production runs (use the CUDA execution space instead)    
+    variant(          
+        "use_unsupported_sycl_arch",    
+        default="none",    
+        values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),    
+        description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False    
+    )                 
+
 
     for dev, (dflt, desc) in devices_variants.items():
         variant(dev, default=dflt, description=desc)
@@ -219,6 +229,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     conflicts("+cuda", when="cxxstd=17 ^cuda@:10")
     conflicts("+cuda", when="cxxstd=20 ^cuda@:11")
+    conflicts("use_unsupported_sycl_arch=none intel_gpu_arch=none", when="sycl", msg="Need SYCL arch for +sycl build")
 
     # SYCL and OpenMPTarget require C++17 or higher
     for cxxstdver in cxxstds[: cxxstds.index("17")]:
@@ -317,6 +328,21 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
             if cuda_arch != "none":
                 kokkos_arch_name = self.spack_cuda_arch_map[cuda_arch]
                 spack_microarches.append(kokkos_arch_name)
+
+        if "+sycl" in spec:
+             if not spec.satisfies("use_unsupported_sycl_arch=none"):
+                options.append(self.define("Kokkos_ENABLE_UNSUPPORTED_ARCHS", True))
+                use_unsupported_sycl_arch = spec.variants["use_unsupported_sycl_arch"].value
+                if use_unsupported_sycl_arch in self.spack_cuda_arch_map:
+                    kokkos_arch_name = self.spack_cuda_arch_map[use_unsupported_sycl_arch]
+                    spack_microarches.append(kokkos_arch_name)
+                elif use_unsupported_sycl_arch in self.amdgpu_arch_map:
+                    spack_microarches.append(self.amdgpu_arch_map[use_unsupported_sycl_arch])
+                else:
+                    raise SpackError("Unrecognized target: {0}".format(use_unsupported_sycl_arch))
+        elif not spec.satisfies("use_unsupported_sycl_arch=none"):
+             raise SpackError("use_unsupported_sycl_arch != none requires +sycl")
+
 
         kokkos_microarch_name = self.get_microarch(spec.target)
         if kokkos_microarch_name:

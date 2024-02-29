@@ -141,7 +141,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                when="+kokkos_hpx_kernels @0.9.0")
     # Pick Kokkos execution spaces and GPU targets depending on the octotiger targets:
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
-    depends_on(kokkos_string + " +sycl @4.2.00: ", patches=['adapt-kokkos-for-sycl-device-split.patch'], when="+sycl+kokkos")
+    depends_on(kokkos_string + " +sycl ", patches=['adapt-kokkos-for-sycl-device-split.patch'], when="+sycl+kokkos ^kokkos@4.2:")
+    depends_on(kokkos_string + " +sycl ", when="+sycl+kokkos")
     #depends_on(kokkos_string + ' ~cuda ~cuda_lambda ~wrapper',
     #           when='+kokkos ~cuda')
     depends_on(kokkos_string + ' +wrapper ', patches=['adapt-kokkos-for-hpx.patch'], when='+kokkos +cuda %gcc')
@@ -212,6 +213,11 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
         if spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
             raise SpackError(("+sycl requires compilation with either the oneapi or the dpcpp compiler!"))
+        # Activate SYCL Intel GPU workaround if we actually have a sycl build with an Intel GPU...
+        if spec.satisfies("^kokkos +sycl") and not spec.satisfies("^kokkos +sycl intel_gpu_arch=none"):
+            args.append('-DOCTOTIGER_WITH_INTEL_GPU_WORKAROUND=ON')
+        else:
+            args.append('-DOCTOTIGER_WITH_INTEL_GPU_WORKAROUND=OFF')
 
         # SIMD & CPU kernel config
         if spec.satisfies("@0.9.0"):
