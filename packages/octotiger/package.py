@@ -47,7 +47,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
 
     # All available variants:
-    variant('sycl', default=False, when="@0.10.0:",
+    variant('sycl', default=False, when="@0.10.0: +kokkos",
             description=("Build octotiger with SYCL (also allows Kokkos"
                          " kernels to run with SYCL)"))
     variant('cuda', default=False, when="@0.7.0:",
@@ -84,14 +84,17 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                          "(discover) appropriate one"),
             values=('DISCOVER', 'SCALAR', 'AVX', 'AVX512', 'NEON', 'SVE'),
             multi=False)
+    variant('sve_length', default='512', values=('128', '256', '512'),
+            when=("@0.10.0: +kokkos simd_library=STD simd_extension=SVE"),
+            description=("SVE length used for the SIMD types in bits."))
     variant('fast_fp_contract', default=False, when='@0.9.0:',
             description=("Enable aggressive fp-contract=fast and fmad for kernels. "
                          "Required to be False for hybrid CPU+GPU runs "))
-    variant('boost_multiprecision', default=False,
-            description=("Use Boost.Multiprecision Instead of GCC "
-                         "Quad-Precision Math Library"))
-    variant('cxx20', default=False,
-            description=("Compile Octo-Tiger with c++20"))
+    variant('boost_multiprecision', default=False, description=("Use "
+            "Boost.Multiprecision instead of GCC Quad-Precision Math Library "
+            "(disable tests to forego quadmath entirely)"))
+    variant('cxxstd', default='17', values=('17', '20'),
+            description=("Compile Octo-Tiger with this C++ Standard"))
 
     # Misc dependencies:
     depends_on('cmake@3.16.0:', type='build')
@@ -102,7 +105,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('silo@4.10.2-bsd:4.11-bsd ')
     # depends_on('silo@4.10.2 -mpi ', when='-mpi')
     depends_on('cuda', when='+cuda')
-    depends_on("dpcpp", when="+sycl")
+    #depends_on("dpcpp", when="+sycl")
 
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
@@ -129,6 +132,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('cppuddle@0.1.0:0.2.1 ', when='@0.9.0')
 
     # Pick Kokkos Version depending on Octotiger version:
+    #depends_on("kokkos", patches=['adapt-kokkos-for-nix.patch', 'adapt-kokkos-for-hpx.patch'], when="+kokkos")
     depends_on("kokkos@:3.6.01 ", when="@0.9.0+kokkos")
     depends_on("kokkos@3.6.01: ", when="@0.10.0:+kokkos")
     depends_on("kokkos@4.1.00: +hpx ",
@@ -137,10 +141,11 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                when="+kokkos_hpx_kernels @0.9.0")
     # Pick Kokkos execution spaces and GPU targets depending on the octotiger targets:
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
-    depends_on("kokkos +sycl ", when="+sycl+kokkos")
-    depends_on(kokkos_string + ' -cuda -cuda_lambda -wrapper',
-               when='+kokkos -cuda')
-    depends_on(kokkos_string + ' +wrapper ', when='+kokkos +cuda %gcc')
+    depends_on(kokkos_string + " +sycl ", patches=['adapt-kokkos-for-sycl-device-split.patch'], when="+sycl+kokkos ^kokkos@4.2:")
+    depends_on(kokkos_string + " +sycl ", when="+sycl+kokkos")
+    #depends_on(kokkos_string + ' ~cuda ~cuda_lambda ~wrapper',
+    #           when='+kokkos ~cuda')
+    depends_on(kokkos_string + ' +wrapper ', patches=['adapt-kokkos-for-hpx.patch'], when='+kokkos +cuda %gcc')
     for sm_ in CudaPackage.cuda_arch_values:
         # This loop propgates the chosem cuda_arch to kokkos.
         depends_on(kokkos_string + ' +cuda +cuda_lambda cuda_arch={0}'.format(
@@ -173,7 +178,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
-    conflicts("simd_extension=SVE simd_library=STD", when="~cxx20")
+    conflicts("simd_extension=SVE simd_library=STD", when="cxxstd=17",
+              msg="SVE SIMD types require C++20 via cxxstd=20.")
+    conflicts("cxxstd=20", when="@:0.9.0")
     conflicts("+cuda", when="+rocm",
               msg="CUDA and ROCm are not compatible in Octo-Tiger.")
     conflicts("+cuda", when="@:0.6.0",
@@ -201,9 +208,16 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
         # SYCL config
-        if "+sycl ^dpcpp" in self.spec:
-            args += [self.define("CMAKE_CXX_COMPILER",
-                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        #if "+sycl ^dpcpp" in self.spec:
+        #    args += [self.define("CMAKE_CXX_COMPILER",
+        #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        if spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
+            raise SpackError(("+sycl requires compilation with either the oneapi or the dpcpp compiler!"))
+        # Activate SYCL Intel GPU workaround if we actually have a sycl build with an Intel GPU...
+        if spec.satisfies("^kokkos +sycl") and not spec.satisfies("^kokkos +sycl intel_gpu_arch=none"):
+            args.append('-DOCTOTIGER_WITH_INTEL_GPU_WORKAROUND=ON')
+        else:
+            args.append('-DOCTOTIGER_WITH_INTEL_GPU_WORKAROUND=OFF')
 
         # SIMD & CPU kernel config
         if spec.satisfies("@0.9.0"):
@@ -219,6 +233,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                 'OCTOTIGER_KOKKOS_SIMD_LIBRARY', 'simd_library'))
             args.append(self.define_from_variant(
                 'OCTOTIGER_KOKKOS_SIMD_EXTENSION', 'simd_extension'))
+        args.append(self.define_from_variant(
+            'OCTOTIGER_SVE_LEN', 'sve_length'))
         args.append(self.define_from_variant(
             'OCTOTIGER_WITH_MONOPOLE_HOST_HPX_EXECUTOR', 'kokkos_hpx_kernels'))
         args.append(self.define_from_variant(
@@ -241,10 +257,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                 raise SpackError("hydro_host_tasks > 1 requires +kokkos_hpx_kernels")
         args.append(self.define('OCTOTIGER_WITH_VC', 'ON'))
         args.append(self.define('OCTOTIGER_WITH_LEGACY_VC', 'OFF'))
-        # Required for SVE SIMD on A64Fx
-        if spec.target == "a64fx":
-            args.append(self.define('OCTOTIGER_WITH_CXX20', 'ON'))
-
 
         # Tests
         args.append(self.define('OCTOTIGER_WITH_TESTS', self.run_tests))
@@ -252,8 +264,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                                    or spec.satisfies("griddim=16")):
             raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
                              "Disable tests or change griddim!")
-        if not self.run_tests or (spec.satisfies("%arm") or spec.satisfies("%clang") or
-           spec.satisfies("+rocm") or spec.satisfies("+sycl") or spec.target == "a64fx"):
+        if not self.run_tests or (not spec.satisfies("+boost_multiprecision")
+                and ((spec.satisfies("%arm") or spec.satisfies("%clang") or
+                    spec.satisfies("+rocm") or spec.satisfies("+sycl") or
+                    spec.target == "a64fx"))):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))
@@ -274,8 +288,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         args.append(self.define('CMAKE_EXPORT_COMPILE_COMMANDS', 'ON'))
         args.append(self.define_from_variant(
             'OCTOTIGER_WITH_BOOST_MULTIPRECISION', 'boost_multiprecision'))
-        args.append(self.define_from_variant(
-            'OCTOTIGER_WITH_CXX20', 'cxx20'))
+        if spec.satisfies("octotiger cxxstd=20"):
+            args.append(self.define('OCTOTIGER_WITH_CXX20', 'ON'))
 
         return args
 

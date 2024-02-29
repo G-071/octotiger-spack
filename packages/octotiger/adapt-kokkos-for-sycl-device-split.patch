@@ -1,0 +1,61 @@
+diff --git a/cmake/kokkos_arch.cmake b/cmake/kokkos_arch.cmake
+index bccf674d7..e476db4f2 100644
+--- a/cmake/kokkos_arch.cmake
++++ b/cmake/kokkos_arch.cmake
+@@ -580,10 +580,10 @@ ENDIF()
+ 
+ IF (KOKKOS_ENABLE_SYCL)
+   COMPILER_SPECIFIC_FLAGS(
+-    DEFAULT -fsycl -fno-sycl-id-queries-fit-in-int -fsycl-dead-args-optimization
++    DEFAULT -fsycl -fno-sycl-id-queries-fit-in-int -fsycl-dead-args-optimization -fsycl-device-code-split=off
+   )
+   COMPILER_SPECIFIC_OPTIONS(
+-    DEFAULT -fsycl-unnamed-lambda
++    DEFAULT -fsycl-unnamed-lambda -fsycl-device-code-split=off
+   )
+ ENDIF()
+ 
+@@ -834,35 +834,35 @@ IF (KOKKOS_ENABLE_SYCL)
+     ENDIF()
+   ELSEIF(KOKKOS_ARCH_INTEL_GEN)
+     COMPILER_SPECIFIC_FLAGS(
+-      DEFAULT -fsycl-targets=spir64
++      DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64
+     )
+   ELSE()
+     COMPILER_SPECIFIC_OPTIONS(
+-      DEFAULT -fsycl-targets=spir64_gen
++      DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen
+     )
+     IF(KOKKOS_ARCH_INTEL_GEN9)
+       COMPILER_SPECIFIC_LINK_OPTIONS(
+-        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen9"
++        DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen9"
+       )
+     ELSEIF(KOKKOS_ARCH_INTEL_GEN11)
+       COMPILER_SPECIFIC_LINK_OPTIONS(
+-        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen11"
++        DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen11"
+       )
+     ELSEIF(KOKKOS_ARCH_INTEL_GEN12LP)
+       COMPILER_SPECIFIC_LINK_OPTIONS(
+-        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen12lp"
++        DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen -Xsycl-target-backend "-device gen12lp"
+       )
+     ELSEIF(KOKKOS_ARCH_INTEL_DG1)
+       COMPILER_SPECIFIC_LINK_OPTIONS(
+-        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device dg1"
++        DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen -Xsycl-target-backend "-device dg1"
+       )
+     ELSEIF(KOKKOS_ARCH_INTEL_XEHP)
+       COMPILER_SPECIFIC_LINK_OPTIONS(
+-        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device 12.50.4"
++        DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen -Xsycl-target-backend "-device 12.50.4"
+       )
+     ELSEIF(KOKKOS_ARCH_INTEL_PVC)
+       COMPILER_SPECIFIC_LINK_OPTIONS(
+-        DEFAULT -fsycl-targets=spir64_gen -Xsycl-target-backend "-device 12.60.7"
++        DEFAULT -fsycl-device-code-split=off -fsycl-targets=spir64_gen  -Xsycl-target-backend "-device 12.60.7"
+       )
+     ENDIF()
+   ENDIF()
