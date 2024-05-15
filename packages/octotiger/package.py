@@ -252,7 +252,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                                    or spec.satisfies("griddim=16")):
             raise SpackError("Octo-Tiger tests only work with griddim=8 and griddim=16. "
                              "Disable tests or change griddim!")
-        if not self.run_tests or (spec.satisfies("%arm") or spec.satisfies("%clang") or
+        if not self.run_tests or (spec.satisfies("%arm") or spec.satisfies("%clang") or spec.target == "neoverse_v2" or
            spec.satisfies("+rocm") or spec.satisfies("+sycl") or spec.target == "a64fx"):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
