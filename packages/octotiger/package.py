@@ -178,8 +178,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
-    conflicts("simd_extension=SVE simd_library=STD", when="cxxstd=17",
-              msg="SVE SIMD types require C++20 via cxxstd=20.")
+    #conflicts("simd_extension=SVE simd_library=STD", when="cxxstd=17",
+    #          msg="SVE SIMD types require C++20 via cxxstd=20.")
     conflicts("cxxstd=20", when="@:0.9.0")
     conflicts("+cuda", when="+rocm",
               msg="CUDA and ROCm are not compatible in Octo-Tiger.")
@@ -187,6 +187,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
               msg="Octo-Tiger version too old for CUDA.")
     conflicts("+rocm", when="-kokkos",
               msg="ROCm support requires building with Kokkos for the correct arch flags.")
+    conflicts("+cuda", when="simd_library=STD", msg="simd_library=STD only works in non-GPU builds!")
+    conflicts("+rocm", when="simd_library=STD", msg="simd_library=STD only works in non-GPU builds!")
+    conflicts("+sycl", when="simd_library=STD", msg="simd_library=STD only works in non-GPU builds!")
 
     build_directory = "spack-build"
 
@@ -267,7 +270,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if not self.run_tests or (not spec.satisfies("+boost_multiprecision")
                 and ((spec.satisfies("%arm") or spec.satisfies("%clang") or
                     spec.satisfies("+rocm") or spec.satisfies("+sycl") or
-                    spec.target == "a64fx"))):
+                    spec.target == "a64fx") or spec.target == "neoverse_n1" or
+                    spec.target == "neoverse_v2")):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))
