@@ -103,6 +103,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0:")
     depends_on('hdf5 +threadsafe +szip +hl -mpi ')
     depends_on('silo@4.10.2-bsd:4.11-bsd ')
+    depends_on('silo+hdf5 ')
     # depends_on('silo@4.10.2 -mpi ', when='-mpi')
     depends_on('cuda', when='+cuda')
     #depends_on("dpcpp", when="+sycl")
