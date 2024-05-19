@@ -251,6 +251,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx@1.7:", when="@3.6: +hpx")
 
     # Patches
+    patch("fix_nvcc_ctad.patch", when="@4.1.00: +hpx +cuda ")
     patch("hpx_profiling_fences.patch", when="@3.5.00 +hpx")
     patch("sycl_bhalft_test.patch", when="@4.2.00 +sycl")
     # adds amd_gfx940 support to Kokkos 4.2.00 (upstreamed in https://github.com/kokkos/kokkos/pull/6671)

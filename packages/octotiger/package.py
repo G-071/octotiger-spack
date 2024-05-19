@@ -168,9 +168,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Known conflicts
 
     # See issue https://github.com/STEllAR-GROUP/hpx/issues/5799
-    conflicts("+kokkos ^kokkos@4.1.00: +cuda +hpx", when="%gcc",
-              msg=("Using hpx sender/receiver backend (kokkos@4.1.0:) with nvcc does not work."
-                   "Use clang or downgrade Kokkos, or deactivate +hpx"))
+    # conflicts("+kokkos ^kokkos@4.1.00: +cuda +hpx", when="%gcc",
+     #          msg=("Using hpx sender/receiver backend (kokkos@4.1.0:) with nvcc does not work."
+      #              "Use clang or downgrade Kokkos, or deactivate +hpx"))
     conflicts("%gcc@12", when="@0.8.0",
             msg="Octotiger release 0.8.0 does not work with gcc@12 - try an older one!")
     conflicts("+cuda", when="cuda_arch=none")

@@ -105,6 +105,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             description=("GPU futures become synchronous. Disabling this option significantly "
                          "decreases GPU performance - this only intended for performance experiments!!"))
     patch("disable_async_gpu_futures.patch", when="@1.9.1: ~async_gpu_futures")
+    patch("fix_nvcc_sender_receiver.patch", when="@1.9.1: +cuda")
     variant("lci_pp_log", default=False,
             description="Enable the LCI-parcelport-specific logger.")
     variant("lci_pp_pcounter", default=False,

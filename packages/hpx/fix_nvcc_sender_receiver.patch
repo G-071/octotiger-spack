@@ -1,0 +1,53 @@
+diff --git a/libs/core/execution/include/hpx/execution/algorithms/detail/partial_algorithm.hpp b/libs/core/execution/include/hpx/execution/algorithms/detail/partial_algorithm.hpp
+index 6088f7ff98..7c896468a8 100644
+--- a/libs/core/execution/include/hpx/execution/algorithms/detail/partial_algorithm.hpp
++++ b/libs/core/execution/include/hpx/execution/algorithms/detail/partial_algorithm.hpp
+@@ -27,7 +27,7 @@ namespace hpx::execution::experimental::detail {
+     struct partial_algorithm_base<Tag, hpx::util::index_pack<Is...>, Ts...>
+     {
+     private:
+-        HPX_NO_UNIQUE_ADDRESS hpx::util::member_pack_for<Ts...> ts;
++        HPX_NO_UNIQUE_ADDRESS hpx::util::member_pack_for<std::decay_t<Ts>...> ts;
+ 
+     public:
+         template <typename... Us>
+diff --git a/libs/core/execution/include/hpx/execution/algorithms/split.hpp b/libs/core/execution/include/hpx/execution/algorithms/split.hpp
+index 03a22fb4da..10f1355816 100644
+--- a/libs/core/execution/include/hpx/execution/algorithms/split.hpp
++++ b/libs/core/execution/include/hpx/execution/algorithms/split.hpp
+@@ -57,7 +57,7 @@ namespace hpx::execution::experimental {
+         template <typename Receiver>
+         struct error_visitor
+         {
+-            HPX_NO_UNIQUE_ADDRESS std::decay_t<Receiver> receiver;
++            HPX_NO_UNIQUE_ADDRESS std::decay_t<Receiver>& receiver;
+ 
+             template <typename Error>
+             void operator()(Error const& error) noexcept
+@@ -71,7 +71,7 @@ namespace hpx::execution::experimental {
+         template <typename Receiver>
+         struct value_visitor
+         {
+-            HPX_NO_UNIQUE_ADDRESS std::decay_t<Receiver> receiver;
++            HPX_NO_UNIQUE_ADDRESS std::decay_t<Receiver>& receiver;
+ 
+             template <typename Ts>
+             void operator()(Ts const& ts) noexcept
+@@ -286,15 +286,13 @@ namespace hpx::execution::experimental {
+ 
+                     void operator()(error_type const& error)
+                     {
+-                        hpx::visit(error_visitor<Receiver>{HPX_FORWARD(
+-                                       Receiver, receiver)},
++                        hpx::visit(error_visitor<Receiver>{receiver},
+                             error);
+                     }
+ 
+                     void operator()(value_type const& ts)
+                     {
+-                        hpx::visit(value_visitor<Receiver>{HPX_FORWARD(
+-                                       Receiver, receiver)},
++                        hpx::visit(value_visitor<Receiver>{receiver},
+                             ts);
+                     }
+                 };
