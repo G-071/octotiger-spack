@@ -148,14 +148,20 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     # This ensures that, for example, dpcpp supports the cuda backend
     # when a NVIDIA device is being used
     # depends_on("intel-oneapi-compilers", when="+sycl ")
-    #depends_on("dpcpp@2023-03:", when="+sycl ")
-    #depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_arch=nvidia")
-    #for cuda_arch in CudaPackage.cuda_arch_values:
-    #    depends_on("dpcpp@2023-03: +cuda",
-    #               when="+sycl sycl_target_arch={0}".format(cuda_arch))
-    #for amdgpu_arch in ROCmPackage.amdgpu_targets:
-    #    depends_on("dpcpp@2023-03: +hip hip-platform=AMD",
-    #               when="+sycl sycl_target_arch={0}".format(amdgpu_arch))
+    depends_on("dpcpp@2023-03:", when="+sycl %gcc ")
+    depends_on("dpcpp@2023-03:", when="+sycl %clang ")
+    depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_arch=nvidia %gcc")
+    depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_arch=nvidia %clang")
+    for cuda_arch in CudaPackage.cuda_arch_values:
+        depends_on("dpcpp@2023-03: +cuda",
+                   when="+sycl sycl_target_arch={0} %gcc".format(cuda_arch))
+        depends_on("dpcpp@2023-03: +cuda",
+                   when="+sycl sycl_target_arch={0} %clang".format(cuda_arch))
+    for amdgpu_arch in ROCmPackage.amdgpu_targets:
+        depends_on("dpcpp@2023-03: +hip hip-platform=AMD",
+                   when="+sycl sycl_target_arch={0} %gcc".format(amdgpu_arch))
+        depends_on("dpcpp@2023-03: +hip hip-platform=AMD",
+                   when="+sycl sycl_target_arch={0} %clang".format(amdgpu_arch))
 
     conflicts("networking=lci", when="@:1.8.0")
     # Only ROCm or CUDA maybe be enabled at once

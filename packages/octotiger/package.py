@@ -106,7 +106,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('silo+hdf5 ')
     # depends_on('silo@4.10.2 -mpi ', when='-mpi')
     depends_on('cuda', when='+cuda')
-    #depends_on("dpcpp", when="+sycl")
+
+    depends_on("dpcpp", when="+sycl %gcc")
+    depends_on("dpcpp", when="+sycl %clang")
 
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
@@ -212,10 +214,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
         # SYCL config
-        #if "+sycl ^dpcpp" in self.spec:
-        #    args += [self.define("CMAKE_CXX_COMPILER",
-        #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
-        if spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
+        if "+sycl ^dpcpp" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER",
+                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        elif spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
             raise SpackError(("+sycl requires compilation with either the oneapi or the dpcpp compiler!"))
         # Activate SYCL Intel GPU workaround if we actually have a sycl build with an Intel GPU...
         if spec.satisfies("^kokkos +sycl") and not spec.satisfies("^kokkos +sycl intel_gpu_arch=none"):
