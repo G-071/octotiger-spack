@@ -57,6 +57,7 @@ class Cppuddle(CMakePackage):
     depends_on("cuda", when="+enable_gpu_tests")
 
     conflicts("+enable_gpu_tests", when="~hpx")
+    conflicts("@:0.3.1", when="%gcc@14:", msg="User newer CPPuddle with GCC >= 14")
 
     build_directory = "spack-build"
 
