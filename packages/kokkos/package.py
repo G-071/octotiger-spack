@@ -27,6 +27,9 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master")
     version("develop", branch="develop")
+    version("4.3.01", sha256="5998b7c732664d6b5e219ccc445cd3077f0e3968b4be480c29cd194b4f45ec70")
+    version("4.3.00", sha256="53cf30d3b44dade51d48efefdaee7a6cf109a091b702a443a2eda63992e5fe0d")
+    version("4.2.01", sha256="cbabbabba021d00923fb357d2e1b905dda3838bd03c885a6752062fe03c67964")
     version("4.2.00", sha256="ac08765848a0a6ac584a0a46cd12803f66dd2a2c2db99bb17c06ffc589bf5be8")
     version("4.1.00", sha256="cf725ea34ba766fdaf29c884cfe2daacfdc6dc2d6af84042d1c78d0f16866275")
     version("4.0.01", sha256="bb942de8afdd519fd6d5d3974706bfc22b6585a62dd565c12e53bdb82cd154f0")
@@ -65,6 +68,13 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     # https://github.com/spack/spack/issues/29052
     conflicts("@:3.5 +sycl", when="%dpcpp@2022:")
     conflicts("@:3.5 +sycl", when="%oneapi@2022:")
+
+    # Added in https://github.com/kokkos/kokkos/pull/6357 (part of 4.2.00)
+    patch('adapt-kokkos-for-nix.patch', when='@:4.1.00')
+    # patch('adapt-kokkos-for-hpx.patch') # not required anymore, added in octotiger recipe
+    # Small patch to CMakeLists, allowing to run the SYCL execution space on AMD GPUs as well
+    # Upstreamed in https://github.com/kokkos/kokkos/pull/6321
+    patch('sycl_hip_arch.patch', when='@:4.1.00 +sycl ^dpcpp')
 
     tpls_variants = {
         "hpx": [False, "Whether to enable the HPX library"],
@@ -373,6 +383,10 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
             if spec.variants[tpl].value:
                 options.append(self.define(tpl + "_DIR", spec[tpl].prefix))
 
+
+        if "+sycl ^dpcpp" in self.spec:
+             options.append(self.define("CMAKE_CXX_COMPILER",
+                                        "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
         if "+rocm" in self.spec:
             options.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
         elif "+wrapper" in self.spec:

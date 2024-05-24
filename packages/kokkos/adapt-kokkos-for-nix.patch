@@ -1,0 +1,20 @@
+diff --git a/bin/kokkos_launch_compiler b/bin/kokkos_launch_compiler
+index 37c17956a..9d37327ce 100755
+--- a/bin/kokkos_launch_compiler
++++ b/bin/kokkos_launch_compiler
+@@ -1,4 +1,4 @@
+-#!/bin/bash -e
++#!/usr/bin/env bash
+ #
+ #   This script allows CMAKE_CXX_COMPILER to be a standard
+ #   C++ compiler and Kokkos sets RULE_LAUNCH_COMPILE and
+diff --git a/bin/nvcc_wrapper b/bin/nvcc_wrapper
+index 139714814..c14008724 100755
+--- a/bin/nvcc_wrapper
++++ b/bin/nvcc_wrapper
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ #
+ # This shell script (nvcc_wrapper) wraps both the host compiler and
+ # NVCC, if you are building legacy C or C++ code with CUDA enabled.

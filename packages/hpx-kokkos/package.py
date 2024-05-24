@@ -51,7 +51,7 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("hpx@1.6", when="@0.1")
     depends_on("kokkos@3.2:3.5", when="@0.1")
 
-    #depends_on("dpcpp", when="+sycl")
+    depends_on("dpcpp", when="+sycl %gcc")
     #depends_on("intel-oneapi-compilers", when="+sycl")
 
     for cxxstd in cxxstds:
@@ -91,9 +91,9 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
 
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
-        #if "+sycl ^dpcpp" in self.spec:
-        #    args += [self.define("CMAKE_CXX_COMPILER",
-        #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        if "+sycl ^dpcpp" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER",
+                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
             
         return args
 

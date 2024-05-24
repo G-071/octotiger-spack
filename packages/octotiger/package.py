@@ -103,9 +103,11 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0:")
     depends_on('hdf5 +threadsafe +szip +hl -mpi ')
     depends_on('silo@4.10.2-bsd:4.11-bsd ')
+    depends_on('silo+hdf5 ')
     # depends_on('silo@4.10.2 -mpi ', when='-mpi')
     depends_on('cuda', when='+cuda')
-    #depends_on("dpcpp", when="+sycl")
+
+    depends_on("dpcpp", when="+sycl %gcc")
 
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
@@ -178,8 +180,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+kokkos_hpx_kernels", when="~kokkos")
     conflicts("simd_library=STD", when="%gcc@:10")
     conflicts("simd_library=STD", when="%clang")
-    conflicts("simd_extension=SVE simd_library=STD", when="cxxstd=17",
-              msg="SVE SIMD types require C++20 via cxxstd=20.")
+    #conflicts("simd_extension=SVE simd_library=STD", when="cxxstd=17",
+    #          msg="SVE SIMD types require C++20 via cxxstd=20.")
     conflicts("cxxstd=20", when="@:0.9.0")
     conflicts("+cuda", when="+rocm",
               msg="CUDA and ROCm are not compatible in Octo-Tiger.")
@@ -187,6 +189,9 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
               msg="Octo-Tiger version too old for CUDA.")
     conflicts("+rocm", when="-kokkos",
               msg="ROCm support requires building with Kokkos for the correct arch flags.")
+    conflicts("+cuda", when="simd_library=STD", msg="simd_library=STD only works in non-GPU builds!")
+    conflicts("+rocm", when="simd_library=STD", msg="simd_library=STD only works in non-GPU builds!")
+    conflicts("+sycl", when="simd_library=STD", msg="simd_library=STD only works in non-GPU builds!")
 
     build_directory = "spack-build"
 
@@ -208,10 +213,10 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
         # SYCL config
-        #if "+sycl ^dpcpp" in self.spec:
-        #    args += [self.define("CMAKE_CXX_COMPILER",
-        #                         "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
-        if spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
+        if "+sycl ^dpcpp" in self.spec:
+            args += [self.define("CMAKE_CXX_COMPILER",
+                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        elif spec.satisfies("+sycl") and not (spec.satisfies("%oneapi@2022.2.1:") or spec.satisfies("%dpcpp")):
             raise SpackError(("+sycl requires compilation with either the oneapi or the dpcpp compiler!"))
         # Activate SYCL Intel GPU workaround if we actually have a sycl build with an Intel GPU...
         if spec.satisfies("^kokkos +sycl") and not spec.satisfies("^kokkos +sycl intel_gpu_arch=none"):
@@ -267,7 +272,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
         if not self.run_tests or (not spec.satisfies("+boost_multiprecision")
                 and ((spec.satisfies("%arm") or spec.satisfies("%clang") or
                     spec.satisfies("+rocm") or spec.satisfies("+sycl") or
-                    spec.target == "a64fx"))):
+                    spec.target == "a64fx") or spec.target == "neoverse_n1" or
+                    spec.target == "neoverse_v2")):
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'OFF'))
         else:
             args.append(self.define('OCTOTIGER_WITH_BLAST_TEST', 'ON'))
@@ -300,12 +306,3 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             # each test)
             with working_dir(self.build_directory):
                 ctest("--output-on-failure")
-
-    # Not required due to adding setup_dependent environment in the dpcpp package
-    # def setup_run_environment(self, env):
-    #     if self.spec.satisfies("+sycl"):
-    #         env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec["dpcpp"].prefix, "lib"))
-
-    # def setup_build_environment(self, env):
-    #     if self.spec.satisfies("+sycl"):
-    #         env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec["dpcpp"].prefix, "lib"))
