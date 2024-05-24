@@ -314,9 +314,9 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
                                      " --cuda-gpu-arch=sm_{0}").format(sycl_target)
             elif sycl_target == "nvidia":
                 sycl_target_flags = "-fsycl-targets=nvptx64-nvidia-cuda "
-            elif sycl_target in amdgpu_targets:
+            elif sycl_target in ROCmPackage.amdgpu_targets:
                 sycl_target_flags = ("-fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend"
-                                     "--offload-arch={0}").format(sycl_target)
+                                     " --offload-arch={0}").format(sycl_target)
             elif sycl_target == "intel":
                 pass  # no flags to add here (for now)
             else:
