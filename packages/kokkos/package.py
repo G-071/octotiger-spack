@@ -1,12 +1,11 @@
-# Copyright 2013-2023 Lawrence Livermore National Security, LLC and other
+# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 import os.path
 
-from llnl.util import tty
+from llnl.util import lang, tty
 
-from spack.error import SpackError
 from spack.package import *
 
 
@@ -24,8 +23,14 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     maintainers("janciesko", "crtrott")
 
+    license("BSD-3-Clause")
+
     version("master", branch="master")
     version("develop", branch="develop")
+    version("4.3.01", sha256="5998b7c732664d6b5e219ccc445cd3077f0e3968b4be480c29cd194b4f45ec70")
+    version("4.3.00", sha256="53cf30d3b44dade51d48efefdaee7a6cf109a091b702a443a2eda63992e5fe0d")
+    version("4.2.01", sha256="cbabbabba021d00923fb357d2e1b905dda3838bd03c885a6752062fe03c67964")
+    version("4.2.00", sha256="ac08765848a0a6ac584a0a46cd12803f66dd2a2c2db99bb17c06ffc589bf5be8")
     version("4.1.00", sha256="cf725ea34ba766fdaf29c884cfe2daacfdc6dc2d6af84042d1c78d0f16866275")
     version("4.0.01", sha256="bb942de8afdd519fd6d5d3974706bfc22b6585a62dd565c12e53bdb82cd154f0")
     version("4.0.00", sha256="1829a423883d4b44223c7c3a53d3c51671145aad57d7d23e6a1a4bebf710dcf6")
@@ -64,11 +69,12 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("@:3.5 +sycl", when="%dpcpp@2022:")
     conflicts("@:3.5 +sycl", when="%oneapi@2022:")
 
-    patch('adapt-kokkos-for-nix.patch')
-    patch('adapt-kokkos-for-hpx.patch')
+    # Added in https://github.com/kokkos/kokkos/pull/6357 (part of 4.2.00)
+    patch('adapt-kokkos-for-nix.patch', when='@:4.1.00')
+    # patch('adapt-kokkos-for-hpx.patch') # not required anymore, added in octotiger recipe
     # Small patch to CMakeLists, allowing to run the SYCL execution space on AMD GPUs as well
     # Upstreamed in https://github.com/kokkos/kokkos/pull/6321
-    patch('sycl_hip_arch.patch', when='@:4.1.00 +sycl')
+    patch('sycl_hip_arch.patch', when='@:4.1.00 +sycl ^dpcpp')
 
     tpls_variants = {
         "hpx": [False, "Whether to enable the HPX library"],
@@ -123,6 +129,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         "skylake": "BDW",
         "icelake": "SKX",
         "skylake_avx512": "SKX",
+        "sapphirerapids": "SPR",
     }
 
     spack_cuda_arch_map = {
@@ -146,11 +153,24 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     cuda_arches = spack_cuda_arch_map.values()
     conflicts("+cuda", when="cuda_arch=none")
 
+    # Kokkos support only one cuda_arch at a time
+    variant(
+        "cuda_arch",
+        description="CUDA architecture",
+        values=("none",) + CudaPackage.cuda_arch_values,
+        default="none",
+        multi=False,
+        sticky=True,
+        when="+cuda",
+    )
+
     amdgpu_arch_map = {
         "gfx900": "vega900",
         "gfx906": "vega906",
         "gfx908": "vega908",
         "gfx90a": "vega90A",
+        "gfx940": "amd_gfx940",
+        "gfx942": "amd_gfx942",
         "gfx1030": "navi1030",
         "gfx1100": "navi1100",
     }
@@ -181,34 +201,26 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         values=("none",) + intel_gpu_arches,
         description="Intel GPU architecture",
     )
-    # This allows running the SYCL execution space on NVIDIA GPUs
+    # This allows running the SYCL execution space on NVIDIA GPUs                                                                                                                                                                                                                            
     # which is handy for testing the SYCL implementation when there is no Intel GPU available.
-    # Note: do not use for production runs (use the CUDA execution space instead)
-    variant(
-        "use_unsupported_sycl_arch",
-        default="none",
-        values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),
-        description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False
-    )
+    # Note: do not use for production runs (use the CUDA execution space instead)    
+    variant(          
+        "use_unsupported_sycl_arch",    
+        default="none",    
+        values=("none",) + tuple(spack_cuda_arch_map.keys()) + tuple(amdgpu_arch_map.keys()),    
+        description="Use SYCL execution space for this NVIDIA/AMD GPU arch.", multi=False    
+    )                 
 
-    devices_values = list(devices_variants.keys())
-    for dev in devices_variants:
-        dflt, desc = devices_variants[dev]
+
+    for dev, (dflt, desc) in devices_variants.items():
         variant(dev, default=dflt, description=desc)
     conflicts("+cuda", when="+rocm", msg="CUDA and ROCm are not compatible in Kokkos.")
-    conflicts("+cuda", when="+sycl", msg="CUDA and SYCL are not compatible in Kokkos.")
-    conflicts("+rocm", when="+sycl", msg="ROCm and SYCL are not compatible in Kokkos.")
+    depends_on("intel-oneapi-dpl", when="+sycl")
 
-    options_values = list(options_variants.keys())
-    for opt in options_values:
-        if "cuda" in opt:
-            conflicts("+%s" % opt, when="~cuda", msg="Must enable CUDA to use %s" % opt)
-        dflt, desc = options_variants[opt]
-        variant(opt, default=dflt, description=desc)
+    for opt, (dflt, desc) in options_variants.items():
+        variant(opt, default=dflt, description=desc, when=("+cuda" if "cuda" in opt else None))
 
-    tpls_values = list(tpls_variants.keys())
-    for tpl in tpls_values:
-        dflt, desc = tpls_variants[tpl]
+    for tpl, (dflt, desc) in tpls_variants.items():
         variant(tpl, default=dflt, description=desc)
         depends_on(tpl, when="+%s" % tpl)
 
@@ -217,31 +229,32 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos-nvcc-wrapper@develop", when="@develop+wrapper")
     depends_on("kokkos-nvcc-wrapper@master", when="@master+wrapper")
     conflicts("+wrapper", when="~cuda")
-    depends_on("dpcpp", when="+sycl")
 
-    stds = ["11", "14", "17", "20"]
-    # TODO: This should be named cxxstd for consistency with other packages
-    variant("std", default="17", values=stds, multi=False)
+    cxxstds = ["11", "14", "17", "20"]
+    variant("cxxstd", default="17", values=cxxstds, multi=False, description="C++ standard")
     variant("pic", default=False, description="Build position independent code")
 
-    conflicts("std=11", when="@3.7:")
-    conflicts("std=14", when="@4.0:")
+    conflicts("cxxstd=11", when="@3.7:")
+    conflicts("cxxstd=14", when="@4.0:")
 
-    conflicts("+cuda", when="std=17 ^cuda@:10")
-    conflicts("+cuda", when="std=20 ^cuda@:11")
+    conflicts("+cuda", when="cxxstd=17 ^cuda@:10")
+    conflicts("+cuda", when="cxxstd=20 ^cuda@:11")
+    conflicts("use_unsupported_sycl_arch=none intel_gpu_arch=none", when="sycl", msg="Need SYCL arch for +sycl build")
 
     # SYCL and OpenMPTarget require C++17 or higher
-    for stdver in stds[: stds.index("17")]:
-        conflicts("+sycl", when="std={0}".format(stdver), msg="SYCL requires C++17 or higher")
+    for cxxstdver in cxxstds[: cxxstds.index("17")]:
+        conflicts(
+            "+sycl", when="cxxstd={0}".format(cxxstdver), msg="SYCL requires C++17 or higher"
+        )
         conflicts(
             "+openmptarget",
-            when="std={0}".format(stdver),
+            when="cxxstd={0}".format(cxxstdver),
             msg="OpenMPTarget requires C++17 or higher",
         )
 
     # HPX should use the same C++ standard
-    for std in stds:
-        depends_on("hpx cxxstd={0}".format(std), when="+hpx std={0}".format(std))
+    for cxxstd in cxxstds:
+        depends_on("hpx cxxstd={0}".format(cxxstd), when="+hpx cxxstd={0}".format(cxxstd))
 
     # HPX version constraints
     depends_on("hpx@:1.6", when="@:3.5 +hpx")
@@ -249,6 +262,13 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     # Patches
     patch("hpx_profiling_fences.patch", when="@3.5.00 +hpx")
+    patch("sycl_bhalft_test.patch", when="@4.2.00 +sycl")
+    # adds amd_gfx940 support to Kokkos 4.2.00 (upstreamed in https://github.com/kokkos/kokkos/pull/6671)
+    patch(
+        "https://github.com/rbberger/kokkos/commit/293319c5844f4d8eea51eb9cd1457115a5016d3f.patch?full_index=1",
+        sha256="145619e87dbf26b66ea23e76906576e2a854a3b09f2a2dd70363e61419fa6a6e",
+        when="@4.2.00",
+    )
 
     variant("shared", default=True, description="Build shared libraries")
 
@@ -282,7 +302,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
             optname = "Kokkos_%s_%s" % (cmake_prefix, opt.upper())
             # Explicitly enable or disable
             option = self.define_from_variant(optname, variant_name)
-            if option not in spack_options:
+            if option:
                 spack_options.append(option)
 
     def setup_dependent_package(self, module, dependent_spec):
@@ -296,43 +316,43 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         from_variant = self.define_from_variant
 
         if spec.satisfies("~wrapper+cuda") and not (
-            spec.satisfies("%clang") or spec.satisfies("%cce") or spec.satisfies("+sycl")
+            spec.satisfies("%clang") or spec.satisfies("%cce")
         ):
             raise InstallError("Kokkos requires +wrapper when using +cuda" "without clang")
 
         options = [
             from_variant("CMAKE_POSITION_INDEPENDENT_CODE", "pic"),
-            from_variant("CMAKE_CXX_STANDARD", "std"),
+            from_variant("CMAKE_CXX_STANDARD", "cxxstd"),
             from_variant("BUILD_SHARED_LIBS", "shared"),
         ]
 
         spack_microarches = []
         if "+cuda" in spec:
-            # this is a list
-            for cuda_arch in spec.variants["cuda_arch"].value:
-                if not cuda_arch == "none":
-                    kokkos_arch_name = self.spack_cuda_arch_map[cuda_arch]
-                    spack_microarches.append(kokkos_arch_name)
+            if isinstance(spec.variants["cuda_arch"].value, str):
+                cuda_arch = spec.variants["cuda_arch"].value
+            else:
+                if len(spec.variants["cuda_arch"].value) > 1:
+                    msg = "Kokkos supports only one cuda_arch at a time."
+                    raise InstallError(msg)
+                cuda_arch = spec.variants["cuda_arch"].value[0]
+            if cuda_arch != "none":
+                kokkos_arch_name = self.spack_cuda_arch_map[cuda_arch]
+                spack_microarches.append(kokkos_arch_name)
 
         if "+sycl" in spec:
-            if not spec.satisfies("use_unsupported_sycl_arch=none"):
+             if not spec.satisfies("use_unsupported_sycl_arch=none"):
                 options.append(self.define("Kokkos_ENABLE_UNSUPPORTED_ARCHS", True))
                 use_unsupported_sycl_arch = spec.variants["use_unsupported_sycl_arch"].value
                 if use_unsupported_sycl_arch in self.spack_cuda_arch_map:
                     kokkos_arch_name = self.spack_cuda_arch_map[use_unsupported_sycl_arch]
                     spack_microarches.append(kokkos_arch_name)
-                    if not spec.satisfies("^dpcpp +cuda"):
-                        raise SpackError(("dpcpp requires +cuda for target arch "
-                                          "{0}").format(use_unsupported_sycl_arch))
                 elif use_unsupported_sycl_arch in self.amdgpu_arch_map:
                     spack_microarches.append(self.amdgpu_arch_map[use_unsupported_sycl_arch])
-                    if not spec.satisfies("^dpcpp +hip hip-platform=AMD"):
-                        raise SpackErrora(("dpcpp requires +cuda for target arch"
-                                           "{0}").format(use_unsupported_sycl_arch))
                 else:
                     raise SpackError("Unrecognized target: {0}".format(use_unsupported_sycl_arch))
         elif not spec.satisfies("use_unsupported_sycl_arch=none"):
-            raise SpackError("use_unsupported_sycl_arch != none requires +sycl")
+             raise SpackError("use_unsupported_sycl_arch != none requires +sycl")
+
 
         kokkos_microarch_name = self.get_microarch(spec.target)
         if kokkos_microarch_name:
@@ -354,26 +374,30 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         for arch in spack_microarches:
             options.append(self.define("Kokkos_ARCH_" + arch.upper(), True))
 
-        options.append(self.define("Kokkos_ENABLE_LIBDL", False))
-        self.append_args("ENABLE", self.devices_values, options)
-        self.append_args("ENABLE", self.options_values, options)
-        self.append_args("ENABLE", self.tpls_values, options)
+        self.append_args("ENABLE", self.devices_variants.keys(), options)
+        self.append_args("ENABLE", self.options_variants.keys(), options)
+        self.append_args("ENABLE", self.tpls_variants.keys(), options)
 
-        for tpl in self.tpls_values:
+        for tpl in self.tpls_variants:
             if spec.variants[tpl].value:
                 options.append(self.define(tpl + "_DIR", spec[tpl].prefix))
 
+
         if "+sycl ^dpcpp" in self.spec:
-            options.append(self.define("CMAKE_CXX_COMPILER",
-                                       "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
-        elif "+rocm" in self.spec:
+             options.append(self.define("CMAKE_CXX_COMPILER",
+                                        "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
+        if "+rocm" in self.spec:
             options.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
         elif "+wrapper" in self.spec:
             options.append(
                 self.define("CMAKE_CXX_COMPILER", self.spec["kokkos-nvcc-wrapper"].kokkos_cxx)
             )
 
-        return options
+        if self.spec.satisfies("%oneapi") or self.spec.satisfies("%intel"):
+            options.append(self.define("CMAKE_CXX_FLAGS", "-fp-model=precise"))
+
+        # Remove duplicate options
+        return lang.dedupe(options)
 
     test_script_relative_path = join_path("scripts", "spack_test")
 
@@ -424,6 +448,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
         if not self.run_test(cmake_bin, options=cmake_args, purpose="Generate the Makefile"):
             tty.warn("Skipping kokkos test: failed to generate Makefile")
             return
+
         if not self.run_test("make", purpose="Build test software"):
             tty.warn("Skipping kokkos test: failed to build test")
 

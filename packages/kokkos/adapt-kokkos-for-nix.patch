@@ -9,7 +9,7 @@ index 37c17956a..9d37327ce 100755
  #   This script allows CMAKE_CXX_COMPILER to be a standard
  #   C++ compiler and Kokkos sets RULE_LAUNCH_COMPILE and
 diff --git a/bin/nvcc_wrapper b/bin/nvcc_wrapper
-index 0c5565146..3bb52d3c6 100755
+index 139714814..c14008724 100755
 --- a/bin/nvcc_wrapper
 +++ b/bin/nvcc_wrapper
 @@ -1,4 +1,4 @@
@@ -18,13 +18,3 @@ index 0c5565146..3bb52d3c6 100755
  #
  # This shell script (nvcc_wrapper) wraps both the host compiler and
  # NVCC, if you are building legacy C or C++ code with CUDA enabled.
-@@ -24,9 +24,6 @@ host_compiler=${NVCC_WRAPPER_DEFAULT_COMPILER:-"g++"}
- 
- # Default to whatever is in the path
- nvcc_compiler=nvcc
--if [ ! -z $CUDA_ROOT ]; then
--  nvcc_compiler="$CUDA_ROOT/bin/nvcc"
--fi
- 
- #host_compiler="icpc"
- #host_compiler="/usr/local/gcc/4.8.3/bin/g++"

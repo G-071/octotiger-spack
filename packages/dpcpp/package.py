@@ -60,7 +60,7 @@ class Dpcpp(CMakePackage):
     )
 
     depends_on("cmake@3.16.2:", type="build")
-    depends_on("ninja@1.10.0:", type="build")
+    #depends_on("ninja@1.10.0:", type="build")
 
     depends_on("cuda@10.2.0:", when="+cuda")
 
@@ -119,6 +119,7 @@ class Dpcpp(CMakePackage):
             if sycl_build_pi_hip_platform == "AMD":
                 llvm_targets_to_build += ";AMDGPU"
                 libclc_targets_to_build += libclc_amd_target_names
+                llvm_enable_projects += ";lld"
             elif sycl_build_pi_hip_platform and not is_cuda:
                 llvm_targets_to_build += ";NVPTX"
                 libclc_targets_to_build += libclc_nvidia_target_names
