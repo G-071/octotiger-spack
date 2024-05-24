@@ -170,9 +170,18 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Known conflicts
 
     # See issue https://github.com/STEllAR-GROUP/hpx/issues/5799
-    conflicts("+kokkos ^kokkos@4.1.00: +cuda +hpx", when="%gcc",
-              msg=("Using hpx sender/receiver backend (kokkos@4.1.0:) with nvcc does not work."
-                   "Use clang or downgrade Kokkos, or deactivate +hpx"))
+    # Resolver in Kokkos develop (later than 4.3.01) and HPX master (later than 1.9.1)
+    # TODO Move conflicts to Kokkos package.py?
+    conflicts("+kokkos ^kokkos@4.1.00:4.3.01 +cuda +hpx ", when="%gcc",
+              msg=("Using hpx sender/receiver backend with nvcc does not work. "
+                  "Use clang or use a newer (than 4.3.01) or older (than 4.1.00) Kokkos version, or deactivate +hpx"))
+    conflicts("+kokkos ^kokkos@4.1.00: +cuda +hpx %gcc ", when="^cuda@:12.2.1",
+              msg=("Using hpx sender/receiver backend with nvcc does not work with older (than 12.3.0) CUDA versions. "
+                  "Use clang or use a newer (than 4.3.01) or older (than 4.1.00) Kokkos version, or deactivate +hpx"))
+    conflicts("+kokkos ^hpx@:1.9.1 ", when="%gcc ^kokkos@4.1.00:",
+              msg=("Using hpx sender/receiver backend with nvcc does not work. "
+                   "Use clang or use a newer (than 1.9.1) HPX version, or deactivate +hpx in kokkos"))
+
     conflicts("%gcc@12", when="@0.8.0",
             msg="Octotiger release 0.8.0 does not work with gcc@12 - try an older one!")
     conflicts("+cuda", when="cuda_arch=none")
