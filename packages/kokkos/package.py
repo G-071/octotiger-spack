@@ -240,6 +240,8 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("+cuda", when="cxxstd=17 ^cuda@:10")
     conflicts("+cuda", when="cxxstd=20 ^cuda@:11")
     conflicts("use_unsupported_sycl_arch=none intel_gpu_arch=none", when="sycl", msg="Need SYCL arch for +sycl build")
+    conflicts("@4.1.00: +hpx +cuda %gcc", when="^cuda@:12.2.0",
+              msg="Using +hpx and +cuda with gcc requires at least CUDA 12.3 due to compilation isuees")
 
     # SYCL and OpenMPTarget require C++17 or higher
     for cxxstdver in cxxstds[: cxxstds.index("17")]:
@@ -259,9 +261,10 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     # HPX version constraints
     depends_on("hpx@:1.6", when="@:3.5 +hpx")
     depends_on("hpx@1.7:", when="@3.6: +hpx")
+    depends_on("hpx@1.9:", when="@4.1: +hpx") # todo would 1.8 also work? 
 
     # Patches
-    patch("fix_nvcc_ctad.patch", when="@4.1.00: +hpx +cuda ")
+    patch("fix_nvcc_ctad.patch", when="@4.1.00:4.3.01 +hpx +cuda %gcc")
     patch("hpx_profiling_fences.patch", when="@3.5.00 +hpx")
     patch("sycl_bhalft_test.patch", when="@4.2.00 +sycl")
     # adds amd_gfx940 support to Kokkos 4.2.00 (upstreamed in https://github.com/kokkos/kokkos/pull/6671)
