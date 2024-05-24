@@ -108,7 +108,6 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('cuda', when='+cuda')
 
     depends_on("dpcpp", when="+sycl %gcc")
-    depends_on("dpcpp", when="+sycl %clang")
 
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
@@ -307,12 +306,3 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
             # each test)
             with working_dir(self.build_directory):
                 ctest("--output-on-failure")
-
-    # Not required due to adding setup_dependent environment in the dpcpp package
-    # def setup_run_environment(self, env):
-    #     if self.spec.satisfies("+sycl"):
-    #         env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec["dpcpp"].prefix, "lib"))
-
-    # def setup_build_environment(self, env):
-    #     if self.spec.satisfies("+sycl"):
-    #         env.prepend_path("LD_LIBRARY_PATH", join_path(self.spec["dpcpp"].prefix, "lib"))

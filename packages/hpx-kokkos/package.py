@@ -52,7 +52,6 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos@3.2:3.5", when="@0.1")
 
     depends_on("dpcpp", when="+sycl %gcc")
-    depends_on("dpcpp", when="+sycl %clang")
     #depends_on("intel-oneapi-compilers", when="+sycl")
 
     for cxxstd in cxxstds:
