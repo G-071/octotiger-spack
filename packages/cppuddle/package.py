@@ -52,8 +52,8 @@ class Cppuddle(CMakePackage):
 
     # Tests need more dependencies...
     depends_on("boost +program_options")
-    depends_on("kokkos@4.0.01 +cuda", when="+enable_gpu_tests")
-    depends_on("hpx-kokkos@master +cuda", when="+enable_gpu_tests")
+    depends_on("kokkos@4.0.01: +cuda +cuda_lambda ", when="+enable_gpu_tests")
+    depends_on("hpx-kokkos +cuda", when="+enable_gpu_tests")
     depends_on("cuda", when="+enable_gpu_tests")
 
     conflicts("+enable_gpu_tests", when="~hpx")
