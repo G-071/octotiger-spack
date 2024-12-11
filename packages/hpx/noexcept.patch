@@ -1,0 +1,17 @@
+diff --git a/libs/core/execution/include/hpx/execution/algorithms/just.hpp b/libs/core/execution/include/hpx/execution/algorithms/just.hpp
+index e52ec33e6e..debe68d9db 100644
+--- a/libs/core/execution/include/hpx/execution/algorithms/just.hpp
++++ b/libs/core/execution/include/hpx/execution/algorithms/just.hpp
+@@ -119,8 +119,11 @@ namespace hpx::execution::experimental {
+ 
+             template <typename Receiver>
+             friend auto
+-            tag_invoke(connect_t, just_sender& s, Receiver&& receiver) noexcept(
++            tag_invoke(connect_t, just_sender& s, Receiver&& receiver) 
++#if !defined(HPX_COMPUTE_DEVICE_CODE)
++            noexcept(
+                 util::all_of_v<std::is_nothrow_copy_constructible<Ts>...>)
++#endif
+             {
+                 return operation_state<Receiver>{
+                     HPX_FORWARD(Receiver, receiver), s.ts};
