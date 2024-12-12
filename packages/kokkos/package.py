@@ -168,7 +168,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("@:3.5 +sycl", when="%dpcpp@2022:")
     conflicts("@:3.5 +sycl", when="%oneapi@2022:")
 
-    patch('hpx_define_guards.patch', when='@:4.1.00: +hpx')
+    patch('hpx_define_guards.patch', when='@4.1.00: +hpx')
     # Added in https://github.com/kokkos/kokkos/pull/6357 (part of 4.2.00)
     patch('adapt-kokkos-for-nix.patch', when='@:4.1.00')
     # patch('adapt-kokkos-for-hpx.patch') # not required anymore, added in octotiger recipe
