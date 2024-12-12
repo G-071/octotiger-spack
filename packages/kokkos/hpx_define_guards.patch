@@ -1,0 +1,12 @@
+diff --git a/core/src/HPX/Kokkos_HPX.hpp b/core/src/HPX/Kokkos_HPX.hpp
+index 245dc128c..c109c972c 100644
+--- a/core/src/HPX/Kokkos_HPX.hpp
++++ b/core/src/HPX/Kokkos_HPX.hpp
+@@ -42,6 +42,7 @@ static_assert(false,
+ 
+ #include <KokkosExp_MDRangePolicy.hpp>
+ 
++#include <hpx/config/compiler_specific.hpp>
+ #include <hpx/barrier.hpp>
+ #include <hpx/condition_variable.hpp>
+ #include <hpx/execution.hpp>
