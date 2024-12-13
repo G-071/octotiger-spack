@@ -17,14 +17,14 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     homepage = "https://hpx.stellar-group.org/"
     url = "https://github.com/STEllAR-GROUP/hpx/archive/v0.0.0.tar.gz"
-    git = "https://github.com/STEllAR-GROUP/hpx.git"
+    git = "https://github.com/G-071/hpx.git"
     maintainers("msimberg", "albestro", "teonnik", "hkaiser", "diehlpk")
 
     license("BSL-1.0")
 
     tags = ["e4s"]
 
-    version("master", branch="master")
+    version("master", branch="fix_nvcc_noexcept")
     version("stable", tag="stable", commit="103a7b8e3719a0db948d1abde29de0ff91e070be")
     version("1.10.0", sha256="5720ed7d2460fa0b57bd8cb74fa4f70593fe8675463897678160340526ec3c19")
     version("1.9.1", sha256="1adae9d408388a723277290ddb33c699aa9ea72defadf3f12d4acc913a0ff22d")
