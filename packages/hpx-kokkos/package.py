@@ -91,9 +91,11 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
 
         if "+rocm" in self.spec:
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
-        if "+sycl ^dpcpp" in self.spec:
-            args += [self.define("CMAKE_CXX_COMPILER",
-                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        if "+sycl " in self.spec:
+            if not "%oneapi" in spec:
+                raise InstallError(
+                    "HPX with +sycl requires the oneapi compiler"
+                )
             
         return args
 

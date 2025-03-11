@@ -174,7 +174,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     # patch('adapt-kokkos-for-hpx.patch') # not required anymore, added in octotiger recipe
     # Small patch to CMakeLists, allowing to run the SYCL execution space on AMD GPUs as well
     # Upstreamed in https://github.com/kokkos/kokkos/pull/6321
-    patch('sycl_hip_arch.patch', when='@:4.1.00 +sycl ^dpcpp')
+    patch('sycl_hip_arch.patch', when='@:4.1.00 +sycl')
 
 
     tpls_variants = {
@@ -506,9 +506,6 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
             if spec.variants[tpl].value:
                 options.append(self.define(tpl + "_DIR", spec[tpl].prefix))
 
-        if "+sycl ^dpcpp" in self.spec:
-            options.append(self.define("CMAKE_CXX_COMPILER",
-                                       "{0}/bin/clang++".format(spec["dpcpp"].prefix)))
         if self.spec.satisfies("+wrapper"):
             options.append(
                 self.define("CMAKE_CXX_COMPILER", self.spec["kokkos-nvcc-wrapper"].kokkos_cxx)

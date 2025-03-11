@@ -147,19 +147,6 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("papi", when="instrumentation=papi")
     depends_on("valgrind", when="instrumentation=valgrind")
 
-    # Depend on compiler that is being used for sycl
-    # This ensures that, for example, dpcpp supports the cuda backend
-    # when a NVIDIA device is being used
-    # depends_on("intel-oneapi-compilers", when="+sycl ")
-    depends_on("dpcpp@2023-03:", when="+sycl %gcc ")
-    depends_on("dpcpp@2023-03: +cuda", when="+sycl sycl_target_arch=nvidia %gcc")
-    for cuda_arch in CudaPackage.cuda_arch_values:
-        depends_on("dpcpp@2023-03: +cuda",
-                   when="+sycl sycl_target_arch={0} %gcc".format(cuda_arch))
-    for amdgpu_arch in ROCmPackage.amdgpu_targets:
-        depends_on("dpcpp@2023-03: +hip hip-platform=AMD",
-                   when="+sycl sycl_target_arch={0} %gcc".format(amdgpu_arch))
-
     conflicts("networking=lci", when="@:1.8.0")
     # Only ROCm or CUDA maybe be enabled at once
     conflicts("+rocm", when="+cuda")
@@ -297,11 +284,11 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             if self.spec.satisfies("^cmake@3.21.0:3.21.2"):
                 args += [self.define("__skip_rocmclang", True)]
 
-        # SYCL support requires compiling with dpcpp clang
-        if "+sycl ^dpcpp" in self.spec:
-            # Set compiler to dpcpp
-            args += [self.define("CMAKE_CXX_COMPILER",
-                                 "{0}/bin/clang++".format(spec["dpcpp"].prefix))]
+        if "+sycl" in self.spec:
+            if not "%oneapi" in spec:
+                raise InstallError(
+                    "HPX with +sycl requires the oneapi compiler"
+                )
             # Set required dpcpp flags depending on the target device! See
             # https://github.com/intel/llvm/blob/sycl/sycl/doc/GetStartedGuide.md
             sycl_target_flags = ""
