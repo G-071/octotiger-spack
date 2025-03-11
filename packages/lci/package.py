@@ -1,5 +1,5 @@
-from spack import *
 import os
+from spack.package import *
 
 class Lci(CMakePackage):
     """LCI: the Lightweight Communication Interface"""

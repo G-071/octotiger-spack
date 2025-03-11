@@ -24,7 +24,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     tags = ["e4s"]
 
-    version("master", branch="fix_nvcc_noexcept")
+    version("master", branch="master")
     version("stable", tag="stable", commit="103a7b8e3719a0db948d1abde29de0ff91e070be")
     version("1.10.0", sha256="5720ed7d2460fa0b57bd8cb74fa4f70593fe8675463897678160340526ec3c19")
     version("1.9.1", sha256="1adae9d408388a723277290ddb33c699aa9ea72defadf3f12d4acc913a0ff22d")
