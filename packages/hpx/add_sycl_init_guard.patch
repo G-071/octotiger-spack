@@ -1,0 +1,30 @@
+diff --git a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
+index 8cc3d9d9b1..e7954f35e8 100644
+--- a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
++++ b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
+@@ -24,6 +24,7 @@
+ #include <hpx/modules/threading_base.hpp>
+ #include <hpx/runtime_local/runtime_local_fwd.hpp>
+ #include <hpx/runtime_local/thread_pool_helpers.hpp>
++#include <hpx/synchronization/once.hpp>
+ 
+ #include <exception>
+ #include <memory>
+@@ -168,6 +169,17 @@ namespace hpx { namespace sycl { namespace experimental {
+         HPX_FORCEINLINE hpx::future<void> get_future(
+             cl::sycl::queue& command_queue)
+         {
++            static hpx::once_flag init_flag;
++            hpx::call_once(init_flag, []() {
++                cl::sycl::queue q(cl::sycl::default_selector_v,
++                    cl::sycl::property::queue::in_order{});
++                cl::sycl::event my_kernel_event = q.submit(
++                    [&](cl::sycl::handler& h) {
++                        h.parallel_for(512, [=](auto i) {});
++                    },
++                    cl::sycl::detail::code_location{});
++                my_kernel_event.wait();
++            });
+             HPX_ASSERT(queue.is_in_order());
+             return hpx::detail::try_catch_exception_ptr(
+                 [&]() {

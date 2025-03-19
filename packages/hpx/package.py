@@ -17,7 +17,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     homepage = "https://hpx.stellar-group.org/"
     url = "https://github.com/STEllAR-GROUP/hpx/archive/v0.0.0.tar.gz"
-    git = "https://github.com/G-071/hpx.git"
+    git = "https://github.com/STEllAR-GROUP/hpx.git"
     maintainers("msimberg", "albestro", "teonnik", "hkaiser", "diehlpk")
 
     license("BSL-1.0")
@@ -92,6 +92,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     )
 
     variant("sycl", default=False, description="Enable SYCL integration.")
+    patch("add_sycl_init_guard.patch", when="+sycl")
     variant(
         "sycl_target_arch", default="none",
         values=(("none", "intel", "nvidia") + CudaPackage.cuda_arch_values + ROCmPackage.amdgpu_targets),
@@ -256,7 +257,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define_from_variant("HPX_WITH_ASYNC_MPI", "async_mpi"),
             self.define_from_variant("HPX_WITH_ASYNC_CUDA", "async_cuda"),
             self.define_from_variant("HPX_WITH_MAX_CPU_COUNT", "max_cpu_count"),
-            self.define("HPX_WITH_TESTS", self.run_tests),
+            self.define("HPX_WITH_TESTS", True),
             self.define("HPX_WITH_NETWORKING", "networking=none" not in spec),
             self.define("HPX_WITH_PARCELPORT_TCP", "networking=tcp" in spec),
             self.define("HPX_WITH_PARCELPORT_MPI", "networking=mpi" in spec),
