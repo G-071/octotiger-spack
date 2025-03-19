@@ -141,7 +141,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
                when="+kokkos_hpx_kernels @0.9.0")
     # Pick Kokkos execution spaces and GPU targets depending on the octotiger targets:
     kokkos_string = 'kokkos +serial +aggressive_vectorization '
-    depends_on(kokkos_string + " +sycl ", patches=['adapt-kokkos-for-sycl-device-split.patch'], when="+sycl+kokkos ^kokkos@4.2:")
+    depends_on(kokkos_string + " +sycl ", patches=['adapt-kokkos-for-sycl-device-split.patch', 'compile_with_42.patch'], when="+sycl+kokkos ^kokkos@4.2:")
     depends_on(kokkos_string + " +sycl ", when="+sycl+kokkos")
     #depends_on(kokkos_string + ' ~cuda ~cuda_lambda ~wrapper',
     #           when='+kokkos ~cuda')
