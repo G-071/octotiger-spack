@@ -1,5 +1,5 @@
 diff --git a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
-index 8cc3d9d9b1..6ee2778d20 100644
+index 8cc3d9d9b1..e7954f35e8 100644
 --- a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
 +++ b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
 @@ -24,6 +24,7 @@
@@ -28,13 +28,19 @@ index 8cc3d9d9b1..6ee2778d20 100644
              HPX_ASSERT(queue.is_in_order());
              return hpx::detail::try_catch_exception_ptr(
                  [&]() {
-@@ -203,5 +215,28 @@ namespace hpx { namespace sycl { namespace experimental {
-                 });
-         }
- #endif
+diff --git a/libs/core/async_sycl/src/sycl_future.cpp b/libs/core/async_sycl/src/sycl_future.cpp
+index b37f0b4f51..a2ea40d857 100644
+--- a/libs/core/async_sycl/src/sycl_future.cpp
++++ b/libs/core/async_sycl/src/sycl_future.cpp
+@@ -10,13 +10,39 @@
+ #include <hpx/allocator_support/internal_allocator.hpp>
+ #include <hpx/assert.hpp>
+ #include <hpx/async_sycl/sycl_future.hpp>
+-#if !defined(HPX_COMPUTE_DEVICE_CODE)
+ 
+ namespace hpx { namespace sycl { namespace experimental { namespace detail {
 +  /// Utility function working around segfault on Intel GPU. Initializes something within the runtime by runnning
 +  ///a dummy kernel
-+  template<const char *modulename> // modulename must be unique within octotiger for this to work
 +  int touch_sycl_device_by_running_a_dummy_kernel(void) {
 +      try {
 +          cl::sycl::queue q(cl::sycl::default_selector_v, cl::sycl::property::queue::in_order{});
@@ -44,38 +50,36 @@ index 8cc3d9d9b1..6ee2778d20 100644
 +              },
 +              cl::sycl::detail::code_location{});
 +          my_kernel_event.wait();
-+          std::cout << "SYCL runtime has been initialized for " << modulename << "!" << std::endl;
++          std::cout << "SYCL runtime has been initialized for HPX!" << std::endl;
 +      } catch (cl::sycl::exception const& e) {
-+          std::cerr << "(NON-FATAL) ERROR: Caught sycl::exception during SYCL dummy kernel!\n";
++          std::cerr << "(NON-FATAL) ERROR: Caught sycl::exception during HPX SYCL dummy kernel!\n";
 +          std::cerr << " {what}: " << e.what() << "\n ";
 +          std::cerr << "Continuing for now as error only occured in the dummy kernel meant to "
 +		    << "initialize the device by first touch...\n";
 +          return 2;
-+
-+      }
-+      return 1;
-+  }
-     }    // namespace detail
- }}}      // namespace hpx::sycl::experimental
-diff --git a/libs/core/async_sycl/src/sycl_future.cpp b/libs/core/async_sycl/src/sycl_future.cpp
-index b37f0b4f51..d40a0c61e4 100644
---- a/libs/core/async_sycl/src/sycl_future.cpp
-+++ b/libs/core/async_sycl/src/sycl_future.cpp
-@@ -13,10 +13,14 @@
- #if !defined(HPX_COMPUTE_DEVICE_CODE)
- 
- namespace hpx { namespace sycl { namespace experimental { namespace detail {
-+  /// Dummy variable to ensure the touch_sycl_device_by_running_a_dummy_kernel is being run
-+  static const char module_identifier[] = "hpx_sycl_fut";
-+  const int init_sycl_device_hydro =
-+      touch_sycl_device_by_running_a_dummy_kernel<module_identifier>();
  
 -    hpx::future<void> get_future(cl::sycl::event command_event)
 -    {
 -        return get_future(hpx::util::internal_allocator<>{}, command_event);
++      }
++      return 1;
++  }
++  /// Dummy variable to ensure the touch_sycl_device_by_running_a_dummy_kernel is being run
++  const int init_sycl_device_hydro =
++      touch_sycl_device_by_running_a_dummy_kernel();
++
++#if !defined(HPX_COMPUTE_DEVICE_CODE)
++
 +  hpx::future<void> get_future(cl::sycl::event command_event)
 +  {
 +      return get_future(hpx::util::internal_allocator<>{}, command_event);
      }
  #if !defined(__HIPSYCL__)
      hpx::future<void> get_future_using_host_task(
+@@ -26,5 +52,5 @@ namespace hpx { namespace sycl { namespace experimental { namespace detail {
+             hpx::util::internal_allocator<>{}, command_event, command_queue);
+     }
+ #endif
+-}}}}    // namespace hpx::sycl::experimental::detail
+ #endif
++}}}}    // namespace hpx::sycl::experimental::detail
