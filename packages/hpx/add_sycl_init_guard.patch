@@ -1,5 +1,5 @@
 diff --git a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
-index 8cc3d9d9b1..e7954f35e8 100644
+index 8cc3d9d9b1..cd35aca679 100644
 --- a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
 +++ b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
 @@ -24,6 +24,7 @@
@@ -10,29 +10,37 @@ index 8cc3d9d9b1..e7954f35e8 100644
  
  #include <exception>
  #include <memory>
-@@ -168,6 +169,17 @@ namespace hpx { namespace sycl { namespace experimental {
-         HPX_FORCEINLINE hpx::future<void> get_future(
-             cl::sycl::queue& command_queue)
-         {
-+            static hpx::once_flag init_flag;
-+            hpx::call_once(init_flag, []() {
-+                cl::sycl::queue q(cl::sycl::default_selector_v,
-+                    cl::sycl::property::queue::in_order{});
-+                cl::sycl::event my_kernel_event = q.submit(
-+                    [&](cl::sycl::handler& h) {
-+                        h.parallel_for(512, [=](auto i) {});
-+                    },
-+                    cl::sycl::detail::code_location{});
-+                my_kernel_event.wait();
-+            });
-             HPX_ASSERT(queue.is_in_order());
-             return hpx::detail::try_catch_exception_ptr(
-                 [&]() {
+@@ -165,23 +166,8 @@ namespace hpx { namespace sycl { namespace experimental {
+         // -------------------------------------------------------------
+         /// Convenience wrapper to get future from just a queue
+         /// Note: queue needs to be constructed with the in_order attribute
+-        HPX_FORCEINLINE hpx::future<void> get_future(
+-            cl::sycl::queue& command_queue)
+-        {
+-            HPX_ASSERT(queue.is_in_order());
+-            return hpx::detail::try_catch_exception_ptr(
+-                [&]() {
+-                    // The SYCL standard does not include a eventRecord method Instead
+-                    // we have to submit some dummy function and use the event the
+-                    // launch returns
+-                    cl::sycl::event event = command_queue.submit(
+-                        [](cl::sycl::handler& h) { h.single_task([]() {}); });
+-                    return get_future(event);
+-                },
+-                [&](std::exception_ptr&& ep) {
+-                    return hpx::make_exceptional_future<void>(HPX_MOVE(ep));
+-                });
+-        }
++        hpx::future<void> get_future(
++            cl::sycl::queue& command_queue);
+ #if !defined(__HIPSYCL__)
+         /// Convenience wrapper to get future from just a queue using SYCL host tasks
+         /// Note: queue needs to be constructed with the in_order attribute
 diff --git a/libs/core/async_sycl/src/sycl_future.cpp b/libs/core/async_sycl/src/sycl_future.cpp
-index b37f0b4f51..a2ea40d857 100644
+index b37f0b4f51..fd6c192a4a 100644
 --- a/libs/core/async_sycl/src/sycl_future.cpp
 +++ b/libs/core/async_sycl/src/sycl_future.cpp
-@@ -10,13 +10,39 @@
+@@ -10,13 +10,56 @@
  #include <hpx/allocator_support/internal_allocator.hpp>
  #include <hpx/assert.hpp>
  #include <hpx/async_sycl/sycl_future.hpp>
@@ -68,6 +76,23 @@ index b37f0b4f51..a2ea40d857 100644
 +  const int init_sycl_device_hydro =
 +      touch_sycl_device_by_running_a_dummy_kernel();
 +
++  hpx::future<void> get_future(cl::sycl::queue& command_queue)
++  {
++      HPX_ASSERT(queue.is_in_order());
++      return hpx::detail::try_catch_exception_ptr(
++          [&]() {
++              // The SYCL standard does not include a eventRecord method
++              // Instead we have to submit some dummy function and use the
++              // event the launch returns
++              cl::sycl::event event = command_queue.submit(
++                  [](cl::sycl::handler& h) { h.single_task([]() {}); });
++              return get_future(event);
++          },
++          [&](std::exception_ptr&& ep) {
++              return hpx::make_exceptional_future<void>(HPX_MOVE(ep));
++          });
++  }
++
 +#if !defined(HPX_COMPUTE_DEVICE_CODE)
 +
 +  hpx::future<void> get_future(cl::sycl::event command_event)
@@ -76,7 +101,7 @@ index b37f0b4f51..a2ea40d857 100644
      }
  #if !defined(__HIPSYCL__)
      hpx::future<void> get_future_using_host_task(
-@@ -26,5 +52,5 @@ namespace hpx { namespace sycl { namespace experimental { namespace detail {
+@@ -26,5 +69,5 @@ namespace hpx { namespace sycl { namespace experimental { namespace detail {
              hpx::util::internal_allocator<>{}, command_event, command_queue);
      }
  #endif
