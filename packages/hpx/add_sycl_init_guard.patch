@@ -1,5 +1,5 @@
 diff --git a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
-index 8cc3d9d9b1..cd35aca679 100644
+index 8cc3d9d9b1..8e86344d0b 100644
 --- a/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
 +++ b/libs/core/async_sycl/include/hpx/async_sycl/sycl_future.hpp
 @@ -24,6 +24,7 @@
@@ -31,7 +31,7 @@ index 8cc3d9d9b1..cd35aca679 100644
 -                    return hpx::make_exceptional_future<void>(HPX_MOVE(ep));
 -                });
 -        }
-+        hpx::future<void> get_future(
++        HPX_CORE_EXPORT hpx::future<void> get_future(
 +            cl::sycl::queue& command_queue);
  #if !defined(__HIPSYCL__)
          /// Convenience wrapper to get future from just a queue using SYCL host tasks
