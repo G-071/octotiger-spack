@@ -92,7 +92,6 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     )
 
     variant("sycl", default=False, description="Enable SYCL integration.")
-    patch("add_sycl_init_guard.patch", when="@:1.10.0 +sycl")
     variant(
         "sycl_target_arch", default="none",
         values=(("none", "intel", "nvidia") + CudaPackage.cuda_arch_values + ROCmPackage.amdgpu_targets),
@@ -100,6 +99,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
                      "specific GPU arch (required for AMD GPUs, optional for NVIDIA GPUs, unavaible "
                      "for Intel GPUs - just select intel for those)."),
     )
+    patch("add_sycl_init_guard.patch", when="@:1.10.0 +sycl sycl_target_arch=intel")
 
     variant("tools", default=False, description="Build HPX tools")
     variant("examples", default=False, description="Build examples")
