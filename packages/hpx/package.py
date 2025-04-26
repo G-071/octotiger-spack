@@ -92,7 +92,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     )
 
     variant("sycl", default=False, description="Enable SYCL integration.")
-    patch("add_sycl_init_guard.patch", when="+sycl")
+    patch("add_sycl_init_guard.patch", when="@:1.10.0 +sycl")
     variant(
         "sycl_target_arch", default="none",
         values=(("none", "intel", "nvidia") + CudaPackage.cuda_arch_values + ROCmPackage.amdgpu_targets),
