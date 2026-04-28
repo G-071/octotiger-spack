@@ -1,15 +1,16 @@
-# Copyright 2013-2023 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
 import sys
 
-import llnl.util.tty as tty
+from spack_repo.builtin.build_systems.cmake import CMakePackage, generator
+from spack_repo.builtin.build_systems.cuda import CudaPackage
+from spack_repo.builtin.build_systems.rocm import ROCmPackage
+from spack_repo.builtin.packages.boost.package import Boost
 
 from spack.package import *
-from spack.pkg.builtin.boost import Boost
 
 
 class Hpx(CMakePackage, CudaPackage, ROCmPackage):
@@ -26,6 +27,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master")
     version("stable", tag="stable", commit="103a7b8e3719a0db948d1abde29de0ff91e070be")
+    version("1.11.0", sha256="01ec47228a2253b41e318bb09c83325a75021eb6ef3262400fbda30ac7389279")
     version("1.10.0", sha256="5720ed7d2460fa0b57bd8cb74fa4f70593fe8675463897678160340526ec3c19")
     version("1.9.1", sha256="1adae9d408388a723277290ddb33c699aa9ea72defadf3f12d4acc913a0ff22d")
     version("1.9.0", sha256="2a8dca78172fbb15eae5a5e9facf26ab021c845f9c09e61b1912e6cf9e72915a")
@@ -63,12 +65,12 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     variant(
         "max_cpu_count",
-        default="64",
+        default="auto",
         description="Max number of OS-threads for HPX applications",
-        values=lambda x: isinstance(x, str) and x.isdigit(),
+        values=lambda x: isinstance(x, str) and (x.isdigit() or x == "auto"),
     )
 
-    instrumentation_values = ("apex", "google_perftools", "papi", "valgrind")
+    instrumentation_values = ("google_perftools", "papi", "valgrind", "thread_debug")
     variant(
         "instrumentation",
         values=any_combination_of(*instrumentation_values),
@@ -100,23 +102,21 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
                      "for Intel GPUs - just select intel for those)."),
     )
     patch("add_sycl_init_guard.patch", when="@:1.10.0 +sycl sycl_target_arch=intel")
+    variant("async_gpu_futures", default=True, when="@1.9.1:",
+            description=("GPU futures become synchronous. Disabling this option significantly "
+                         "decreases GPU performance - this only intended for performance experiments!!"))
+    patch("disable_async_gpu_futures.patch", when="@1.9.1: ~async_gpu_futures")
 
     variant("tools", default=False, description="Build HPX tools")
     variant("examples", default=False, description="Build examples")
     variant("async_mpi", default=False, description="Enable MPI Futures.")
     variant("async_cuda", default=False, description="Enable CUDA Futures.")
-    variant("async_gpu_futures", default=True, when="@1.9.1:",
-            description=("GPU futures become synchronous. Disabling this option significantly "
-                         "decreases GPU performance - this only intended for performance experiments!!"))
-    patch("disable_async_gpu_futures.patch", when="@1.9.1: ~async_gpu_futures")
-    variant("lci_pp_log", default=False,
-            description="Enable the LCI-parcelport-specific logger.")
-    variant("lci_pp_pcounter", default=False,
-            description="Enable the LCI-parcelport-specific performance counters.")
+    variant("apex", default=False, description="Enable APEX support")
 
     # Build dependencies
+    depends_on("cxx", type="build")
+    depends_on("apex", when="+apex")
     depends_on("python", type=("build", "test", "run"))
-    depends_on("pkgconfig", type="build")
     depends_on("git", type="build")
     depends_on("cmake", type="build")
 
@@ -126,11 +126,10 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("boost +context", when="+generic_coroutines")
     for cxxstd in cxxstds:
         depends_on("boost cxxstd={0}".format(map_cxxstd(cxxstd)), when="cxxstd={0}".format(cxxstd))
-    depends_on("asio", when="@1.7:")
-    for cxxstd in cxxstds:
-        depends_on(
-            "asio cxxstd={0}".format(map_cxxstd(cxxstd)), when="cxxstd={0} ^asio".format(cxxstd)
-        )
+
+    with when("@1.7:"):
+        for cxxstd in cxxstds:
+            depends_on(f"asio cxxstd={map_cxxstd(cxxstd)}", when=f"cxxstd={cxxstd}")
 
     depends_on("gperftools", when="malloc=tcmalloc")
     depends_on("jemalloc", when="malloc=jemalloc")
@@ -143,11 +142,11 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("cuda", when="+async_cuda")
 
-    depends_on("otf2", when="instrumentation=apex")
     depends_on("gperftools", when="instrumentation=google_perftools")
     depends_on("papi", when="instrumentation=papi")
     depends_on("valgrind", when="instrumentation=valgrind")
 
+    conflicts("cxxstd=17", when="@1.12.0:")
     conflicts("networking=lci", when="@:1.8.0")
     # Only ROCm or CUDA maybe be enabled at once
     conflicts("+rocm", when="+cuda")
@@ -186,6 +185,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
     # Restrictions for 1.5.x
     conflicts("cxxstd=11", when="@1.5:")
+    depends_on("apex@2.3:", when="@1.5")
 
     # Restrictions for 1.2.X
     with when("@:1.2.1"):
@@ -199,6 +199,10 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("hwloc@1.6:")
 
     # Patches and one-off conflicts
+    
+    # Asio 1.34.0 removed io_context::work, used by HPX:
+    # https://github.com/chriskohlhoff/asio/commit/a70f2df321ff40c1809773c2c09986745abf8d20.
+    conflicts("^asio@1.34:")
 
     # Certain Asio headers don't compile with nvcc from 1.17.0 onwards with
     # C++17. Starting with CUDA 11.3 they compile again.
@@ -212,6 +216,14 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     # both include a fix.
     conflicts("^boost@:1.77.0", when="@:1.7 +rocm")
 
+    # libstdc++ has a broken valarray in some versions that clang/hipcc refuses
+    # to compile:
+    # https://github.com/spack/spack/issues/38104
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103022
+    conflicts("%gcc@9.1:9.4", when="+rocm")
+    conflicts("%gcc@10.1:10.3", when="+rocm")
+    conflicts("%gcc@11.2", when="+rocm")
+
     # boost 1.73.0 build problem with HPX 1.4.0 and 1.4.1
     # https://github.com/STEllAR-GROUP/hpx/issues/4728#issuecomment-640685308
     depends_on("boost@:1.72.0", when="@:1.4")
@@ -222,11 +234,14 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     # https://github.com/spack/spack/pull/17654
     # https://github.com/STEllAR-GROUP/hpx/issues/4829
     depends_on("boost+context", when="+generic_coroutines")
-    _msg_generic_coroutines = "This platform requires +generic_coroutines"
-    conflicts("~generic_coroutines", when="platform=darwin", msg=_msg_generic_coroutines)
 
-    # Patches APEX
-    patch("git_external.patch", when="@1.3.0 instrumentation=apex")
+    _msg_generic_coroutines_platform = "This platform requires +generic_coroutines"
+    conflicts("~generic_coroutines", when="platform=darwin", msg=_msg_generic_coroutines_platform)
+
+    _msg_generic_coroutines_target = "This target requires +generic_coroutines"
+    conflicts("~generic_coroutines", when="target=aarch64:", msg=_msg_generic_coroutines_target)
+    conflicts("~generic_coroutines", when="target=arm:", msg=_msg_generic_coroutines_target)
+
     patch("mimalloc_no_version_requirement.patch", when="@:1.8.0 malloc=mimalloc")
 
     patch("sycl_define_hpx_compute.patch", when="@:1.9.1+sycl")
@@ -246,6 +261,10 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
     def cmake_args(self):
         spec, args = self.spec, []
 
+        format_max_cpu_count = lambda max_cpu_count: (
+            "" if max_cpu_count == "auto" else max_cpu_count
+        )
+
         args += [
             self.define("HPX_WITH_CXX{0}".format(spec.variants["cxxstd"].value), True),
             self.define_from_variant("HPX_WITH_MALLOC", "malloc"),
@@ -256,13 +275,16 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define_from_variant("HPX_WITH_EXAMPLES", "examples"),
             self.define_from_variant("HPX_WITH_ASYNC_MPI", "async_mpi"),
             self.define_from_variant("HPX_WITH_ASYNC_CUDA", "async_cuda"),
-            self.define_from_variant("HPX_WITH_MAX_CPU_COUNT", "max_cpu_count"),
-            self.define("HPX_WITH_TESTS", True),
+            self.define_from_variant("HPX_WITH_APEX", "apex"),
+            self.define("HPX_WITH_TESTS", self.run_tests),
             self.define("HPX_WITH_NETWORKING", "networking=none" not in spec),
-            self.define("HPX_WITH_PARCELPORT_TCP", "networking=tcp" in spec),
-            self.define("HPX_WITH_PARCELPORT_MPI", "networking=mpi" in spec),
-            self.define("HPX_WITH_PARCELPORT_LCI", "networking=lci" in spec),
-            self.define_from_variant("HPX_WITH_MAX_CPU_COUNT", "max_cpu_count"),
+            self.define("HPX_WITH_PARCELPORT_TCP", spec.satisfies("networking=tcp")),
+            self.define("HPX_WITH_PARCELPORT_MPI", spec.satisfies("networking=mpi")),
+            self.define("HPX_WITH_PARCELPORT_LCI", spec.satisfies("networking=lci")),
+            self.define(
+                "HPX_WITH_MAX_CPU_COUNT",
+                format_max_cpu_count(spec.variants["max_cpu_count"].value),
+            ),
             self.define_from_variant("HPX_WITH_GENERIC_CONTEXT_COROUTINES", "generic_coroutines"),
             self.define("BOOST_ROOT", spec["boost"].prefix),
             self.define("HWLOC_ROOT", spec["hwloc"].prefix),
@@ -271,8 +293,7 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             self.define("HPX_WITH_BOOST_ALL_DYNAMIC_LINK", True),
             self.define("BUILD_SHARED_LIBS", True),
             self.define("HPX_DATASTRUCTURES_WITH_ADAPT_STD_TUPLE", False),
-            self.define_from_variant("HPX_WITH_PARCELPORT_LCI_LOG", "lci_pp_log"),
-            self.define_from_variant("HPX_WITH_PARCELPORT_LCI_PCOUNTER", "lci_pp_pcounter")
+            self.define("HPX_WITH_PKGCONFIG", False),
         ]
 
         # Enable unity builds when available
@@ -280,12 +301,12 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
             args += [self.define("HPX_WITH_UNITY_BUILD", True)]
 
         # HIP support requires compiling with hipcc
-        if "+rocm" in self.spec:
+        if self.spec.satisfies("+rocm"):
             args += [self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc)]
             if self.spec.satisfies("^cmake@3.21.0:3.21.2"):
                 args += [self.define("__skip_rocmclang", True)]
 
-        if "+sycl" in self.spec:
+        if self.spec.satisfies("+sycl"):
             if not "%oneapi" in spec:
                 raise InstallError(
                     "HPX with +sycl requires the oneapi compiler"
@@ -317,15 +338,11 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
         # Instrumentation
         args += self.instrumentation_args()
-
-        if "instrumentation=apex" in spec:
+        
+        if spec.satisfies("instrumentation=thread_debug"):
             args += [
-                self.define("APEX_WITH_OTF2", True),
-                self.define("OTF2_ROOT", spec["otf2"].prefix),
+                self.define("HPX_WITH_THREAD_DEBUG_INFO", True),
+                self.define("HPX_WITH_LOGGING", True),
             ]
-
-            # it seems like there was a bug in the default version of APEX in 1.5.x
-            if spec.satisfies("@1.5"):
-                args += [self.define("HPX_WITH_APEX_TAG", "v2.3.0")]
 
         return args
