@@ -15,6 +15,7 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     maintainers("G-071", "msimberg")
 
     version("master", branch="master")
+    version("0.4.1", sha256="dd6153c8d626013e30537606f7a791e4f36969219337f41dad942351d7f33ffa", preferred=True)
     version("0.4.0", sha256="dafef55521cf4bf7ab28ebad546ea1d3fb83fac3a9932e292db4ab3666cd833f")
     version("0.3.0", sha256="83c1d11dab95552ad0abdae767c71f757811d7b51d82bd231653dc942e89a45d")
     version("0.2.0", sha256="289b711cea26afe80be002fc521234c9194cd0e8f69863f3b08b654674dbe5d5")
