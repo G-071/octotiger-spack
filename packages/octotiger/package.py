@@ -100,7 +100,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on('cmake@3.16.0:', type='build')
     depends_on('vc@1.4.1')
     depends_on('boost@1.61.0: cxxstd=14', when="@0.8.0")
-    depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0:")
+    depends_on('boost@1.74.0: cxxstd=17', when="@0.9.0: cxxstd=17")
+    depends_on('boost@1.74.0: cxxstd=2a', when="@0.9.0: cxxstd=20")
     depends_on('hdf5 +threadsafe +szip +hl -mpi ')
     depends_on('silo@4.10.2-bsd:4.11-bsd ')
     depends_on('silo+hdf5 ')
@@ -110,7 +111,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     # Pick HPX version and cxxstd depending on octotiger version:
     depends_on('hpx@:1.4.1 cxxstd=14 ', when='@:0.8.0')
     depends_on('hpx@1.6:1.7 cxxstd=17 ', when='@0.9.0')
-    depends_on('hpx@1.8.0: cxxstd=17 ', when='@0.10.0:')
+    depends_on('hpx@1.8.0: cxxstd=17 ', when='@0.10.0: cxxstd=17')
+    depends_on('hpx@1.8.0: cxxstd=20 ', when='@0.10.0: cxxstd=20')
     # Pick HPX GPU variants depending on octotiger's GPU variants:
     depends_on('hpx +cuda +async_cuda ', when='+cuda')
     depends_on('hpx +rocm ', when='+rocm')
@@ -145,7 +147,7 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
     depends_on(kokkos_string + " +sycl ", when="+sycl+kokkos")
     #depends_on(kokkos_string + ' ~cuda ~cuda_lambda ~wrapper',
     #           when='+kokkos ~cuda')
-    depends_on(kokkos_string + ' +wrapper ', patches=['adapt-kokkos-for-hpx.patch'], when='+kokkos +cuda %gcc')
+    depends_on(kokkos_string + ' +wrapper ', patches=['adapt-kokkos-for-hpx.patch'], when='+kokkos +cuda ^kokkos+wrapper')
     for sm_ in CudaPackage.cuda_arch_values:
         # This loop propgates the chosem cuda_arch to kokkos.
         depends_on(kokkos_string + ' +cuda +cuda_lambda cuda_arch={0}'.format(
