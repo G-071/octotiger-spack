@@ -46,6 +46,7 @@ class Cppuddle(CMakePackage):
     # Workarounds
     patch("fix_stream_interface_type.patch", when="@0.3.1~executor_recycling") # upstreamed in master
 
+    depends_on("cxx", type="build")
     depends_on("cmake@3.16:")
     depends_on("hpx@:1.7.1", when="+hpx @0.1.0")
     depends_on("hpx@1.7.1:", when="+hpx @0.2.0:")

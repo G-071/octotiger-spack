@@ -38,6 +38,8 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
         description="Integration type for GPU futures",
     )
 
+    depends_on("cxx", type="build")
+
     depends_on("cmake@3.19:", type="build")
 
     depends_on("hpx")
@@ -45,6 +47,11 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("hpx@1.8:", when="@0.3:")
     depends_on("kokkos@3.6:", when="@0.3:")
+    # Incompatibilities caused by https://github.com/STEllAR-GROUP/hpx/pull/6565
+    # and https://github.com/kokkos/kokkos/pull/7156 fixed by
+    # https://github.com/STEllAR-GROUP/hpx-kokkos/pull/25
+    conflicts("^hpx@1.11:", when="@:0.4.0")
+    conflicts("^kokkos@4.4:", when="@:0.4.0")
 
     depends_on("hpx@1.7", when="@0.2")
     depends_on("kokkos@3.6:", when="@0.2")
