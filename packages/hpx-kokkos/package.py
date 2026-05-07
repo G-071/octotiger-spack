@@ -43,7 +43,8 @@ class HpxKokkos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("cmake@3.19:", type="build")
 
     depends_on("hpx")
-    depends_on("kokkos +hpx +hpx_async_dispatch")
+    depends_on("kokkos +hpx ", when="^kokkos@:4.7")
+    depends_on("kokkos +hpx +hpx_async_dispatch", when="^kokkos@:4.7")
 
     depends_on("hpx@1.8:", when="@0.3:")
     depends_on("kokkos@3.6:", when="@0.3:")

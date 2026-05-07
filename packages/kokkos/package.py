@@ -356,7 +356,7 @@ class Kokkos(CMakePackage, CudaPackage, ROCmPackage):
     with default_args(multi=False, description="C++ standard"):
         variant("cxxstd", default="17", values=("14", "17", "20"), when="@3")
         variant("cxxstd", default="17", values=("17", "20"), when="@4")
-        variant("cxxstd", default="20", values=("20"), when="@5:")
+        variant("cxxstd", default="20", values=("20",), when="@5:")
 
     # FIXME regroup variants and conflicts
     variant(
