@@ -137,8 +137,8 @@ class Octotiger(CMakePackage, CudaPackage, ROCmPackage):
 
     # Pick Kokkos Version depending on Octotiger version:
     #depends_on("kokkos", patches=['adapt-kokkos-for-nix.patch', 'adapt-kokkos-for-hpx.patch'], when="+kokkos")
-    depends_on("kokkos@:3.6.01 ", when="@0.9.0+kokkos")
-    depends_on("kokkos@3.6.01: ", when="@0.10.0:+kokkos")
+    depends_on("kokkos@:3.6.01 +serial ", when="@0.9.0+kokkos")
+    depends_on("kokkos@3.6.01: +serial ", when="@0.10.0:+kokkos")
     depends_on("kokkos@4.1.00: +hpx ",
                 when="+kokkos_hpx_kernels @0.10.0:")
     depends_on("kokkos@:3.6.01 +hpx +hpx_async_dispatch ",
